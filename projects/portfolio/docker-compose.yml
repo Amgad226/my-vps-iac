@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  laravel:
+    image: ghcr.io/amgad226/laravel-portfolio:latest
+    container_name: laravel_app
+    restart: always
+    ports:
+      - "80:9000"       # maps VPS port 80 to container port 9000 (php-fpm)
+    env_file:
+      - .env
+    volumes:
+      - ./database:/var/www/html/database  # persist SQLite database
+      - ./storage:/var/www/html/storage    # persist storage
