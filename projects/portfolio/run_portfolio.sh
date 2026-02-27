@@ -16,6 +16,8 @@ COMPOSE_FILE="./docker-compose.yml"   # Make sure this file exists in your IaC r
 # -------------------------------
 # Pull latest images and run
 # -------------------------------
+
+cp ../../envs ./.env  # Copy .env from envs to current directory
 if [ -f "$COMPOSE_FILE" ]; then
     echo "🚀 Pulling latest images and starting containers..."
     docker-compose -f $COMPOSE_FILE pull
