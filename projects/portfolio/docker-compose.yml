@@ -5,10 +5,24 @@ services:
     image: ghcr.io/amgad226/laravel-portfolio:latest
     container_name: laravel_app
     restart: always
-    ports:
-      - "80:9000"       # maps VPS port 80 to container port 9000 (php-fpm)
+    expose:
+      - "9000"
     env_file:
       - .env
     volumes:
       - ./database:/var/www/html/database  # persist SQLite database
       - ./storage:/var/www/html/storage    # persist storage
+
+
+
+  nginx:
+    image: nginx:alpine
+    container_name: laravel_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./storage:/var/www/html/storage
+      - ./database:/var/www/html/database
+    depends_on:
+      - laravel
