@@ -14,11 +14,8 @@ services:
     volumes:
       - ./database.sqlite:/var/www/html/database/database.sqlite
       - ./start.sh:/var/www/html/start.sh
-
       - laravel_public:/var/www/html/public
       - laravel-storage:/var/www/html/storage/app
-    # volumes:
-    #   - ./database:/var/www/html/database  # persist SQLite database
 
 
 
@@ -29,8 +26,6 @@ services:
       - "80:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./storage:/var/www/html/storage
-      - ./database:/var/www/html/database
       - laravel-storage:/var/www/html/storage/app
       - laravel_public:/var/www/html/public 
 
