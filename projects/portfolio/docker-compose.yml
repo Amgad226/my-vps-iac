@@ -12,9 +12,8 @@ services:
     volumes:
       - laravel_storage:/var/www/html/storage
       - laravel_database:/var/www/html/database
-      - ./entrypoint.sh:/entrypoint.sh:ro # <-- mount the correct host path
 
-    command: ["./entrypoint.sh"] # <-- Run the script when container starts
+    command: ["./entrypoint.sh"] 
 
   nginx:
     image: nginx:alpine
