@@ -9,6 +9,8 @@ services:
       - "9000"
     env_file:
       - .env
+    volumes:
+      - ./database.sqlite:/var/www/html/database/database.sqlite
     # volumes:
     #   - ./database:/var/www/html/database  # persist SQLite database
     #   - ./storage:/var/www/html/storage    # persist storage
