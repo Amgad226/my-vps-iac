@@ -12,9 +12,23 @@ services:
     volumes:
       - laravel_storage:/var/www/html/storage
       - laravel_database:/var/www/html/database
-
-    command: ["./entrypoint.sh"] 
-
+    command: >
+      sh -c "
+      echo '🚀 Laravel container starting...' &&
+      if [ \"$DB_CONNECTION\" = \"sqlite\" ] && [ ! -f \"$DB_DATABASE\" ]; then
+        echo '📦 Creating SQLite database...' &&
+        touch \"$DB_DATABASE\" &&
+        chown www-data:www-data \"$DB_DATABASE\"
+      fi &&
+      echo '⏳ Running migrations...' &&
+      php artisan migrate --force &&
+      echo '⚡ Caching config...' &&
+      php artisan config:clear &&
+      php artisan config:cache &&
+      php artisan route:cache || true &&
+      echo '✅ Starting PHP-FPM...' &&
+      exec php-fpm
+      "
   nginx:
     image: nginx:alpine
     container_name: laravel_nginx
