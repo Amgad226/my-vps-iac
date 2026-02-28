@@ -43,7 +43,6 @@ services:
       - "80:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - laravel_code:/var/www/html:ro
       - laravel_storage:/var/www/html/storage
       - laravel_database:/var/www/html/database
     depends_on:
@@ -52,4 +51,3 @@ services:
 volumes:
   laravel_storage:
   laravel_database:
-  laravel_code:
