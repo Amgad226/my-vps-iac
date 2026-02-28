@@ -1,29 +1,37 @@
 #!/bin/bash
+set -e
+# -------------------------------
+# Determine script directory
+# -------------------------------
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+PROJECT_ROOT="$SCRIPT_DIR"        # if docker-compose.yml is in same folder
+ENVS_DIR="$SCRIPT_DIR/../../envs" # adjust relative to script location
 
 # -------------------------------
-# Check for root / sudo
+# Check for docker-compose.yml
 # -------------------------------
-if [ "$EUID" -ne 0 ]; then
-  echo "❌ This script must be run as root. Re-running with sudo..."
-  exec sudo "$0" "$@"
-fi
+COMPOSE_FILE="$PROJECT_ROOT/docker-compose.yml"
 
-# -------------------------------
-# Paths
-# -------------------------------
-COMPOSE_FILE="./docker-compose.yml"   # Make sure this file exists in your IaC repo
-
-# -------------------------------
-# Pull latest images and run
-# -------------------------------
-
-cp ../../envs ./.env  # Copy .env from envs to current directory
-if [ -f "$COMPOSE_FILE" ]; then
-    echo "🚀 Pulling latest images and starting containers..."
-    docker-compose -f $COMPOSE_FILE pull
-    docker-compose -f $COMPOSE_FILE up -d
-    echo "✅ Containers are running!"
-else
+if [ ! -f "$COMPOSE_FILE" ]; then
     echo "❌ docker-compose.yml not found at $COMPOSE_FILE"
     exit 1
 fi
+
+# -------------------------------
+# Copy env file
+# -------------------------------
+if [ -f "$ENVS_DIR" ]; then
+    cp "$ENVS_DIR" "$PROJECT_ROOT/portfolio.env"
+    echo "✅ Copied envs to portfolio.env"
+else
+    echo "⚠ No env file found at $ENVS_DIR, skipping copy"
+fi
+
+# -------------------------------
+# Run Docker Compose
+# -------------------------------
+echo "🚀 Pulling images and starting containers..."
+docker compose -f "$COMPOSE_FILE" pull
+docker compose -f "$COMPOSE_FILE" up -d
+
+echo "✅ Laravel portfolio is running!"

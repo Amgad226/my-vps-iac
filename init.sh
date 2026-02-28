@@ -9,16 +9,16 @@ fi
 
 echo "🚀 Starting VPS setup..."
 
-# Load external scripts
-source ./install/git.sh
-source ./install/docker.sh
+# # Load external scripts
+# source ./install/git.sh
+# source ./install/docker.sh
 
-# Call functions
-install_git
-install_docker
+# # Call functions
+# install_git
+# install_docker
 
 
-sudo bash ./login/ghcr.sh
+# sudo bash ./login/ghcr.sh
 sudo bash ./projects/portfolio/run_portfolio.sh
 
 echo "🎉 VPS setup complete!"
