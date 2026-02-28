@@ -17,4 +17,8 @@ source ./install/docker.sh
 install_git
 install_docker
 
+
+./login/ghcr.sh
+./projects/portfolio/run_portfolio.sh
+
 echo "🎉 VPS setup complete!"
