@@ -18,7 +18,7 @@ install_git
 install_docker
 
 
-./login/ghcr.sh
-./projects/portfolio/run_portfolio.sh
+sudo bash ./login/ghcr.sh
+sudo bash ./projects/portfolio/run_portfolio.sh
 
 echo "🎉 VPS setup complete!"
