@@ -41,6 +41,7 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./storage:/var/www/html/storage
       - ./database:/var/www/html/database
+      - ./public:/var/www/html/public
     depends_on:
       - laravel
 
