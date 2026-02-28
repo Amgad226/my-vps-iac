@@ -10,9 +10,8 @@ services:
     env_file:
       - .env
     volumes:
-      - ./database:/var/www/html/database  # persist SQLite database
-      - ./storage:/var/www/html/storage    # persist storage
-
+      - laravel_storage:/var/www/html/storage
+      - laravel_database:/var/www/html/database
 
 
   nginx:
@@ -26,3 +25,7 @@ services:
       - ./database:/var/www/html/database
     depends_on:
       - laravel
+
+volumes:
+  laravel_storage:
+  laravel_database:
