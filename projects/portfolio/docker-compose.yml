@@ -9,45 +9,20 @@ services:
       - "9000"
     env_file:
       - .env
-    volumes:
-      - laravel_storage:/var/www/html/storage
-      - laravel_database:/var/www/html/database
-    command: >
-      sh -c "
-      echo '🚀 Starting Laravel...' &&
+    # volumes:
+    #   - ./database:/var/www/html/database  # persist SQLite database
+    #   - ./storage:/var/www/html/storage    # persist storage
 
-      # Ensure SQLite exists
-      if [ \"$DB_CONNECTION\" = \"sqlite\" ]; then
-        mkdir -p /var/www/html/database &&
-        touch /var/www/html/database/database.sqlite &&
-        chown -R www-data:www-data /var/www/html/database &&
-        chmod -R 775 /var/www/html/database
-      fi &&
 
-      chown -R www-data:www-data /var/www/html/storage &&
-      chmod -R 775 /var/www/html/storage &&
-
-      php artisan migrate --force &&
-
-      php artisan config:cache &&
-      php artisan route:cache || true &&
-
-      exec php-fpm
-      "
 
   nginx:
     image: nginx:alpine
     container_name: laravel_nginx
-    restart: always
     ports:
       - "80:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - laravel_storage:/var/www/html/storage
-      - laravel_database:/var/www/html/database
+      - ./storage:/var/www/html/storage
+      - ./database:/var/www/html/database
     depends_on:
       - laravel
-
-volumes:
-  laravel_storage:
-  laravel_database:
