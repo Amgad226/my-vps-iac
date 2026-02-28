@@ -13,13 +13,15 @@ echo "🚀 Starting VPS setup..."
 source ./install/git.sh
 source ./install/docker.sh
 source ./install/tree.sh
-
+source ./login/ghcr.sh
 # Call functions
 install_git
 install_docker
 install_tree
 
-# sudo bash ./login/ghcr.sh
+login_to_ghcr
+
+bash ./login/ghcr.sh
 sudo bash ./projects/portfolio/run_portfolio.sh
 
 echo "🎉 VPS setup complete!"
