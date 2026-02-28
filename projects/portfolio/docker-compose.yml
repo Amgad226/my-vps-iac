@@ -20,6 +20,9 @@ services:
         touch \"$DB_DATABASE\" &&
         chown www-data:www-data \"$DB_DATABASE\"
       fi &&
+      touch /var/www/html/database/database.sqlite &&
+      chown -R www-data:www-data /var/www/html/database &&
+      chmod -R 775 /var/www/html/database &&
       echo '⏳ Running migrations...' &&
       php artisan migrate --force &&
       echo '⚡ Caching config...' &&
