@@ -7,10 +7,11 @@ echo "🚀 Starting Laravel container..."
 mkdir -p /var/www/html/storage
 mkdir -p /var/www/html/database
 
-# Ensure SQLite database exists
-if [ "$DB_CONNECTION" = "sqlite" ] && [ ! -f "$DB_DATABASE" ]; then
-    echo "📦 Creating SQLite database..."
-    touch "$DB_DATABASE"
+DB_FILE="/var/www/html/database/database.sqlite"
+
+if [ ! -f "$DB_FILE" ]; then
+    echo "📦 Creating SQLite database at $DB_FILE..."
+    touch "$DB_FILE"
 fi
 
 # Fix permissions
