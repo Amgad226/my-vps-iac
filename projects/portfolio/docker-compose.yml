@@ -9,8 +9,11 @@ services:
       - "9000"
     env_file:
       - .env
+    command: ["/bin/sh", "-c", "/var/www/html/start.sh"]
+
     volumes:
       - ./database.sqlite:/var/www/html/database/database.sqlite
+      - ./start.sh:/var/www/html/start.sh
     # volumes:
     #   - ./database:/var/www/html/database  # persist SQLite database
     #   - ./storage:/var/www/html/storage    # persist storage
