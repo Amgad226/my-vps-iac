@@ -12,6 +12,8 @@ services:
     volumes:
       - laravel_storage:/var/www/html/storage
       - laravel_database:/var/www/html/database
+      - laravel_public_build:/var/www/html/public/build
+      - laravel_public_assets:/var/www/html/public/assets
     command: >
       sh -c "
       echo '🚀 Laravel container starting...' &&
@@ -41,10 +43,13 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./storage:/var/www/html/storage
       - ./database:/var/www/html/database
-      - ./public:/var/www/html/public
+      - laravel_public_build:/var/www/html/public/build:ro
+      - laravel_public_assets:/var/www/html/public/assets:ro
     depends_on:
       - laravel
 
 volumes:
   laravel_storage:
   laravel_database:
+  laravel_public_build:   # <-- shared volume for public/build
+  laravel_public_assets:  # <-- shared volume for public/assets
