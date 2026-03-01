@@ -14,6 +14,8 @@ source ./install/git.sh
 source ./install/docker.sh
 source ./install/tree.sh
 source ./login/ghcr.sh
+source ./firewall/ufw.sh
+
 # Call functions
 install_git
 install_docker
@@ -22,11 +24,11 @@ install_tree
 login_to_ghcr
 
 bash ./login/ghcr.sh
+
+open_port_if_needed 80
 sudo bash ./projects/portfolio/run_portfolio.sh
 
-sudo ufw allow 3000/tcp
-sudo ufw status
-
+open_port_if_needed 3000
 sudo bash ./projects/tracking-gps-server/run_gps.sh
 
 echo "🎉 VPS setup complete!"
