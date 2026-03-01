@@ -35,4 +35,8 @@ open_port_if_needed 51821 tcp
 open_port_if_needed 51820 udp
 sudo bash ./projects/wg-easy/run_wg.sh
 
+
+open_port_if_needed 5000
+sudo bash ./projects/image-compressor/run_image_compressor.sh
+
 echo "🎉 VPS setup complete!"

@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  image-compressor:
+    image: ghcr.io/amgad226/image-compressor:latest
+    container_name: image-compressor
+    ports:
+      - "5000:5000"  # Map container port 5000 to host
+    env_file:
+      - .env
+    restart: unless-stopped
