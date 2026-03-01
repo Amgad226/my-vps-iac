@@ -1,0 +1,12 @@
+services:
+  tracking_gps_server_app:
+    image: ghcr.io/amgad226/tracking-gps-server:latest
+    container_name: tracking_gps_server_app
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+
+    volumes:
+      - ./dev.db:/app/dev.db
