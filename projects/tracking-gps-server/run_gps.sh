@@ -22,7 +22,7 @@ fi
 # -------------------------------
 if [ -f "$ENVS_DIR/gps.env" ]; then
     cp "$ENVS_DIR/gps.env" "./.env"
-    echo "✅ Copied envs to gps.env"
+    echo "✅ envs/gps.env to ./.env"
 else
     echo "⚠ No env file found at $ENVS_DIR, skipping copy"
 fi

@@ -23,6 +23,10 @@ login_to_ghcr
 
 bash ./login/ghcr.sh
 sudo bash ./projects/portfolio/run_portfolio.sh
+
+sudo ufw allow 3000/tcp
+sudo ufw status
+
 sudo bash ./projects/tracking-gps-server/run_gps.sh
 
 echo "🎉 VPS setup complete!"
