@@ -31,4 +31,8 @@ sudo bash ./projects/portfolio/run_portfolio.sh
 open_port_if_needed 3000
 sudo bash ./projects/tracking-gps-server/run_gps.sh
 
+open_port_if_needed 51821 tcp
+open_port_if_needed 51820 udp
+sudo bash ./projects/wg-easy/run_wg.sh
+
 echo "🎉 VPS setup complete!"
