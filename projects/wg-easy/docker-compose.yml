@@ -4,7 +4,7 @@ services:
 
     volumes:
       - ./wg-easy:/etc/wireguard
-      - ${HOME}/vpn/index.html:/app/www/index.html
+      # - ${HOME}/vpn/index.html:/app/www/index.html
 
     ports:
       - 51820:51820/udp
