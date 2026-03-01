@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  nest-app:
+    container_name: dev_nest
+    build:
+      context: .
+    image: amgad226/nest
+    ports:
+      - "3005:3000"
+    depends_on:
+      - dev_redis
+      - dev_db
+    env_file:
+      - ./.env
+    networks:
+      - dev_network
+      # - staging-nest_staging_network
+
+
+  dev_redis:
+    container_name: dev_redis
+    image: redis:7.2.4
+    ports:
+      - "6380:6379"
+    volumes:
+      - dev_redis_data:/dev_data
+
+      
+  dev_db:
+    image: postgres:16.2
+    container_name: dev_pgdb
+    restart: always
+    ports:
+      - "5434:5434"
+    environment:
+      PGPORT: 5434
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: amjadalwttarkingalkinog
+    volumes:
+      - dev_db_data:/var/lib/postgresql/dev_data
+    networks:
+      - dev_network
+
+networks:
+  # staging-nest_staging_network:
+  #    external: true
+   
+  dev_network:
+    driver: bridge
+
+volumes:
+  dev_db_data:
+  dev_redis_data:

@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  gateway:
+    container_name: gateway
+    build:
+      context: .
+    image: amgad226/gateway
+    ports:
+      - "3010:4000"
+    env_file:
+      - .env
+ 

@@ -1,0 +1,64 @@
+version: '3'
+
+services:
+  staging_nest-app:
+    container_name: staging_nest
+    build:
+      context: .
+    image: amgad226/staging-nest
+    ports:
+      - "3007:3000"
+    depends_on:
+      - staging_redis
+      - staging_db
+      - staging_pgadmin
+    env_file: './.env'
+    networks:
+      - staging_network
+
+  staging_db:
+    image: postgres:16.2
+    container_name: staging_pgdb
+    restart: always
+    ports:
+      - "5433:5433"
+    environment:
+      PGPORT: 5433
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: amjadalwttarkingalkinog
+    volumes:
+      - staging_db_data:/var/lib/postgresql/staging_data
+    networks:
+      - staging_network 
+
+  staging_redis:
+    container_name: staging_redis
+    image: redis:7.2.4
+    ports:
+      - "6380:6379"
+    volumes:
+      - staging_redis_data:/staging_data
+
+  staging_pgadmin:
+    image: dpage/pgadmin4:8.5
+    container_name: staging_pgadmin4_container
+    depends_on:
+      - staging_db
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: amjad@king.net
+      PGADMIN_DEFAULT_PASSWORD: amjadalwttarkingalkinog
+    volumes:
+      - staging_pg_data:/var/lib/staging_pgadmin
+    networks:
+      - staging_network
+
+networks:
+  staging_network:
+    driver: bridge
+
+volumes:
+  staging_db_data:
+  staging_pg_data:
+  staging_redis_data:

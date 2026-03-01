@@ -1,0 +1,25 @@
+#yversion: '3.8'
+
+services:
+  next:
+    container_name: next
+    build:
+      args:
+        # NODE_ENV: "dev"
+        NEXT_PUBLIC_BASE_API_URL: "http://127.0.0.1:3011/"
+        NEXT_PUBLIC_BASE_SOCKET_URL: "http://127.0.0.1:3012/"
+        NEXT_PUBLIC_APP_SECRET_CODE: "nolemonnomelon"
+        REACT_APP_BASE_API_URL: "3000"
+      # context: .
+    image: amgad226/next
+  #  env_file:
+   #   - .env
+  #  environment:
+      # - NODE_ENV=dev
+   #   - NEXT_PUBLIC_BASE_API_URL=http://127.0.0.1:3011/
+    #  - NEXT_PUBLIC_BASE_SOCKET_URL=http://127.0.0.1:3012/
+      #- NEXT_PUBLIC_APP_SECRET_CODE=nolemonnomelon
+     # - REACT_APP_BASE_API_URL=3000
+    ports:
+      - "3020:3000"
+

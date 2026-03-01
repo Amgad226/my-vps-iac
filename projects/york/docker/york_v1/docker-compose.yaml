@@ -1,0 +1,85 @@
+version: "3"
+networks:
+  laravel:
+    driver: bridge
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - laravel-storage:/var/www/app/storage/app
+      - laravel_public:/var/www/app/public 
+
+    volumes_from:
+      - laravel
+    depends_on:
+      - laravel
+    networks:
+      - laravel
+
+  laravel:
+    env_file: './.env'
+    build:
+      context: .
+    image: amgad226/york_v1
+    container_name: laravel
+    links:
+      - mysql
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - laravel_public:/var/www/app/public
+      - laravel-storage:/var/www/app/storage/app
+    depends_on:
+      - mysql
+      - phpmyadmin
+    expose:
+      - "9000"
+    networks:
+      - laravel
+    entrypoint: ["/var/www/app/docker-entrypoint.sh"]
+
+  mysql:
+    image: mysql/mysql-server:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'york_v1'
+      MYSQL_USER: 'root'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
+      MYSQL_TCP_PORT: 3306
+    networks:
+      - laravel
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - '3307:3306'
+    expose:
+      - 3306
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: always
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: "amjad123"
+      MYSQL_USER: root
+      MYSQL_PASSWORD: amjad123
+    networks:
+      - laravel
+
+volumes:
+  mysql_data:
+  laravel_public:
+  laravel-storage:

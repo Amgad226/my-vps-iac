@@ -1,0 +1,53 @@
+services:
+  nest-app:
+    build:
+      context: .
+    image: amgad226/certificate
+    container_name: certificate_container
+    ports:
+      - "3011:3000"
+    env_file:
+      - ./.env
+    depends_on:
+      - certificate_db
+      - certificate_pgadmin
+    networks:
+      - certificate_network
+
+  certificate_db:
+    image: postgres:16.2
+    container_name: certificate_db_container
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: amjadalwttarkingalkinog
+      POSTGRES_DB: nestdb
+    volumes:
+      - certificate_db_data:/var/lib/postgresql/data
+    networks:
+      - certificate_network
+
+  certificate_pgadmin:
+    image: dpage/pgadmin4:8.5
+    container_name: certificate_pgadmin4_container
+    depends_on:
+      - certificate_db
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: amjad@king.net
+      PGADMIN_DEFAULT_PASSWORD: amjadalwttarkingalkinog
+    volumes:
+      - certificate_pg_data:/var/lib/pgadmin
+    networks:
+      - certificate_network
+
+networks:
+  certificate_network:
+    driver: bridge
+
+volumes:
+  certificate_db_data:
+  certificate_pg_data:
