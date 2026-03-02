@@ -36,6 +36,7 @@ services:
     volumes:
       - laravel_public:/var/www/app/public
       - laravel-storage:/var/www/app/storage/app
+      - ./docker-entrypoint.sh:/var/www/app/docker-entrypoint.sh
     depends_on:
       - mysql
       - phpmyadmin

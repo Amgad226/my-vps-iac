@@ -3,12 +3,15 @@ echo "php version:"
 php -v 
 
 # sleep
-echo "sleep 15s"
-sleep 15s
+echo "sleep 10s"
+sleep 10s
 
 # run migrations
-echo "RUN :php artisan migrate --seed "
-php artisan migrate --seed
+echo "RUN :php artisan migrate "
+php artisan migrate
+
+echo "RUN php artisna db seed"
+php artisan db:seed
 
 # link starage
 echo "php artisan storage:unlink"
