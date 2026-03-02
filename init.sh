@@ -40,6 +40,8 @@ open_port_if_needed 5000
 sudo bash ./projects/image-compressor/run_image_compressor.sh
 
 
+
+# TODO should run certificate seeders
 open_port_if_needed 3011
 open_port_if_needed 3005
 open_port_if_needed 3020
