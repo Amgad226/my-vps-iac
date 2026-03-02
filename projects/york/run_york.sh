@@ -64,3 +64,21 @@ docker compose -f "$NEXT_COMPOSE_FILE" pull
 docker compose -f "$NEXT_COMPOSE_FILE" up -d
 
 echo "✅ york next is running!"
+
+
+
+
+
+GATEWAY_COMPOSE_FILE="$PROJECT_ROOT/docker/gateway/docker-compose.yml"
+
+if [ ! -f "$GATEWAY_COMPOSE_FILE" ]; then
+    echo "❌ docker-compose.yml not found at $GATEWAY_COMPOSE_FILE"
+    exit 1
+fi
+
+
+echo "🚀 Pulling images and starting containers..."
+docker compose -f "$GATEWAY_COMPOSE_FILE" pull
+docker compose -f "$GATEWAY_COMPOSE_FILE" up -d
+
+echo "✅ york gateway is running!"
