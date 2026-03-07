@@ -51,7 +51,7 @@ sudo bash ./projects/york/run_york.sh
 
 
 
-open_port_if_needed 5000
+open_port_if_needed 5001
 sudo bash ./projects/source-safe/run_source_safe.sh
 
 echo "🎉 VPS setup complete!"
