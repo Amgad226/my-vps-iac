@@ -48,4 +48,10 @@ open_port_if_needed 3020
 open_port_if_needed 3007
 open_port_if_needed 8080
 sudo bash ./projects/york/run_york.sh
+
+
+
+open_port_if_needed 5000
+sudo bash ./projects/source-safe/run_source_safe.sh
+
 echo "🎉 VPS setup complete!"
