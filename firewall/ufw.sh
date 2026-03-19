@@ -1,13 +1,12 @@
 #!/bin/bash
 
-# Function to open a port in UFW if it's not already allowed
+# Function to allow a port in iptables if it's not already allowed
 # Usage: open_port_if_needed <port> <protocol>
 # Protocol can be "tcp" or "udp" (default: tcp)
 open_port_if_needed() {
     local PORT=$1
     local PROTOCOL=${2:-tcp}  # Default to tcp if not provided
 
-    # Validate input
     if [ -z "$PORT" ]; then
         echo "Usage: open_port_if_needed <port> [tcp|udp]"
         return 1
@@ -18,67 +17,58 @@ open_port_if_needed() {
         return 1
     fi
 
-    # Check if UFW is active
-    if ! sudo ufw status | grep -q "Status: active"; then
-        echo "UFW is inactive. Enabling UFW..."
-        sudo ufw allow ssh          # Keep SSH open
-        sudo ufw enable
-    fi
-
-    # Check if the port/protocol is already allowed
-    if sudo ufw status | grep -q "${PORT}/${PROTOCOL}"; then
-        echo "Port ${PORT}/${PROTOCOL} is already allowed."
+    # Check if rule already exists
+    if sudo iptables -C INPUT -p "$PROTOCOL" --dport "$PORT" -j ACCEPT &>/dev/null; then
+        echo "Port $PORT/$PROTOCOL already allowed."
     else
-        echo "Port ${PORT}/${PROTOCOL} is not allowed. Allowing it..."
-        sudo ufw allow "${PORT}/${PROTOCOL}"
+        echo "Allowing port $PORT/$PROTOCOL..."
+        sudo iptables -I INPUT -p "$PROTOCOL" --dport "$PORT" -j ACCEPT
     fi
-
-    echo "Current UFW status:"
-    sudo ufw status
 }
-# Example usage:
-# open_port_if_needed 3000 tcp
-# open_port_if_needed 53 udp
-
-
 
 setup_firewall_strict() {
-  echo "🔒 Setting up STRICT firewall (UFW controls Docker)..."
+    echo "🔒 Setting up STRICT iptables firewall..."
 
-  # Reset firewall safely
-  ufw --force reset
+    # Flush existing rules
+    sudo iptables -F
+    sudo iptables -t nat -F
+    sudo iptables -t mangle -F
+    sudo iptables -X
 
-  # Default rules
-  ufw default deny incoming
-  ufw default allow outgoing
+    # Default policies
+    sudo iptables -P INPUT DROP
+    sudo iptables -P FORWARD DROP
+    sudo iptables -P OUTPUT ACCEPT
 
-  # Allow SSH FIRST (very important)
-  ufw allow 22/tcp
+    # Allow loopback
+    sudo iptables -A INPUT -i lo -j ACCEPT
 
-  # Allow localhost (so docker containers can talk internally)
-  ufw allow from 127.0.0.1
-  ufw allow from ::1
+    # Allow established connections
+    sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 
-  # Enable firewall
-  ufw --force enable
+    # Allow SSH
+    sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
 
-  echo "🔧 Making UFW the master over Docker..."
-  
-  # Add Docker override rule
-  if ! grep -q "DOCKER-USER" /etc/ufw/after.rules; then
-    cat <<EOF >> /etc/ufw/after.rules
+    # Allow Docker-exposed ports manually via a whitelist
+    ALLOWED_PORTS=(80 3000 51821 51820 5000 3011 3005 3020 3007 8080 5001)
 
-# === Make UFW control Docker exposed ports ===
-*filter
-:DOCKER-USER - [0:0]
--A DOCKER-USER -j ufw-user-input
--A DOCKER-USER -j RETURN
-COMMIT
-EOF
-  fi
+    for PORT in "${ALLOWED_PORTS[@]}"; do
+        sudo iptables -A INPUT -p tcp --dport $PORT -j ACCEPT
+        sudo iptables -A INPUT -p udp --dport $PORT -j ACCEPT
+    done
 
-  # Reload firewall
-  ufw reload
+    # Enforce Docker container ports via DOCKER-USER
+    sudo iptables -F DOCKER-USER || true
+    sudo iptables -I DOCKER-USER -j DROP
+    for PORT in "${ALLOWED_PORTS[@]}"; do
+        sudo iptables -I DOCKER-USER -p tcp --dport $PORT -j ACCEPT
+        sudo iptables -I DOCKER-USER -p udp --dport $PORT -j ACCEPT
+    done
+    # Always allow localhost inside DOCKER-USER
+    sudo iptables -I DOCKER-USER -s 127.0.0.1 -j ACCEPT
 
-  echo "✅ Firewall is now strict. Docker ports are blocked unless allowed manually."
+    # Save rules to persist after reboot
+    sudo iptables-save | sudo tee /etc/iptables/rules.v4 >/dev/null
+
+    echo "✅ Firewall setup complete. Only allowed ports are accessible."
 }
