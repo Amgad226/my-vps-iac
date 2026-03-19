@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Function to allow a port in iptables if it's not already allowed
-# Usage: open_port_if_needed <port> <protocol>
-# Protocol can be "tcp" or "udp" (default: tcp)
+# Function to open a port via nftables if it is not already allowed
+# Only ports you explicitly open here will be accessible
 open_port_if_needed() {
     local PORT=$1
-    local PROTOCOL=${2:-tcp}  # Default to tcp if not provided
+    local PROTOCOL=${2:-tcp}  # Default protocol is TCP
 
     if [ -z "$PORT" ]; then
         echo "Usage: open_port_if_needed <port> [tcp|udp]"
@@ -18,57 +17,51 @@ open_port_if_needed() {
     fi
 
     # Check if rule already exists
-    if sudo iptables -C INPUT -p "$PROTOCOL" --dport "$PORT" -j ACCEPT &>/dev/null; then
+    if sudo nft list ruleset | grep -q "dport $PORT $PROTOCOL accept"; then
         echo "Port $PORT/$PROTOCOL already allowed."
     else
         echo "Allowing port $PORT/$PROTOCOL..."
-        sudo iptables -I INPUT -p "$PROTOCOL" --dport "$PORT" -j ACCEPT
+        sudo nft add rule inet filter input $PROTOCOL dport $PORT accept
+        sudo nft insert rule inet filter docker-user $PROTOCOL dport $PORT accept
     fi
 }
 
 setup_firewall_strict() {
-    echo "🔒 Setting up STRICT iptables firewall..."
+    echo "🔒 Setting up STRICT nftables firewall..."
 
-    # Flush existing rules
-    sudo iptables -F
-    sudo iptables -t nat -F
-    sudo iptables -t mangle -F
-    sudo iptables -X
+    # Flush existing ruleset
+    sudo nft flush ruleset
 
-    # Default policies
-    sudo iptables -P INPUT DROP
-    sudo iptables -P FORWARD DROP
-    sudo iptables -P OUTPUT ACCEPT
+    # Create inet table
+    sudo nft add table inet filter
 
-    # Allow loopback
-    sudo iptables -A INPUT -i lo -j ACCEPT
+    # Create input, forward, output chains
+    sudo nft add chain inet filter input  { type filter hook input priority 0 \; policy drop \; }
+    sudo nft add chain inet filter forward { type filter hook forward priority 0 \; policy drop \; }
+    sudo nft add chain inet filter output  { type filter hook output priority 0 \; policy accept \; }
 
-    # Allow established connections
-    sudo iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+    # Allow loopback interface
+    sudo nft add rule inet filter input iif "lo" accept
 
-    # Allow SSH
-    sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+    # Allow established/related connections
+    sudo nft add rule inet filter input ct state established,related accept
 
-    # Allow Docker-exposed ports manually via a whitelist
-    ALLOWED_PORTS=(80 3000 51821 51820 5000 3011 3005 3020 3007 8080 5001)
+    # Allow SSH (port 22)
+    sudo nft add rule inet filter input tcp dport 22 accept
 
-    for PORT in "${ALLOWED_PORTS[@]}"; do
-        sudo iptables -A INPUT -p tcp --dport $PORT -j ACCEPT
-        sudo iptables -A INPUT -p udp --dport $PORT -j ACCEPT
-    done
+    # Create docker-user chain to block all Docker-exposed ports
+    sudo nft add chain inet filter docker-user { type filter hook prerouting priority -100 \; policy accept \; }
 
-    # Enforce Docker container ports via DOCKER-USER
-    sudo iptables -F DOCKER-USER || true
-    sudo iptables -I DOCKER-USER -j DROP
-    for PORT in "${ALLOWED_PORTS[@]}"; do
-        sudo iptables -I DOCKER-USER -p tcp --dport $PORT -j ACCEPT
-        sudo iptables -I DOCKER-USER -p udp --dport $PORT -j ACCEPT
-    done
-    # Always allow localhost inside DOCKER-USER
-    sudo iptables -I DOCKER-USER -s 127.0.0.1 -j ACCEPT
+    # Drop everything in docker-user by default
+    sudo nft add rule inet filter docker-user drop
 
-    # Save rules to persist after reboot
-    sudo iptables-save | sudo tee /etc/iptables/rules.v4 >/dev/null
+    # Always allow localhost traffic in docker-user
+    sudo nft insert rule inet filter docker-user ip saddr 127.0.0.1 accept
 
-    echo "✅ Firewall setup complete. Only allowed ports are accessible."
+    # Save rules so they persist across reboot
+    sudo nft list ruleset | sudo tee /etc/nftables.conf >/dev/null
+    sudo systemctl enable nftables
+    sudo systemctl restart nftables
+
+    echo "✅ Strict firewall setup complete. Only SSH is open, Docker cannot expose ports."
 }
