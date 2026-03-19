@@ -42,23 +42,43 @@ open_port_if_needed() {
 
 
 
+setup_firewall_strict() {
+  echo "🔒 Setting up STRICT firewall (UFW controls Docker)..."
 
-
-setup_firewall() {
-  echo "🔒 Configuring firewall..."
-
-  # Reset everything
+  # Reset firewall safely
   ufw --force reset
 
   # Default rules
   ufw default deny incoming
   ufw default allow outgoing
 
-  # Allow SSH (VERY important or you will lock yourself out)
+  # Allow SSH FIRST (very important)
   ufw allow 22/tcp
+
+  # Allow localhost (so docker containers can talk internally)
+  ufw allow from 127.0.0.1
+  ufw allow from ::1
 
   # Enable firewall
   ufw --force enable
 
-  echo "✅ Firewall enabled (all ports closed except SSH)"
+  echo "🔧 Making UFW the master over Docker..."
+  
+  # Add Docker override rule
+  if ! grep -q "DOCKER-USER" /etc/ufw/after.rules; then
+    cat <<EOF >> /etc/ufw/after.rules
+
+# === Make UFW control Docker exposed ports ===
+*filter
+:DOCKER-USER - [0:0]
+-A DOCKER-USER -j ufw-user-input
+-A DOCKER-USER -j RETURN
+COMMIT
+EOF
+  fi
+
+  # Reload firewall
+  ufw reload
+
+  echo "✅ Firewall is now strict. Docker ports are blocked unless allowed manually."
 }

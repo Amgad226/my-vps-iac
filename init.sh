@@ -16,7 +16,7 @@ source ./install/tree.sh
 source ./login/ghcr.sh
 source ./firewall/ufw.sh
 
-setup_firewall
+setup_firewall_strict
 
 # Call functions
 install_git
