@@ -16,6 +16,8 @@ source ./install/tree.sh
 source ./login/ghcr.sh
 source ./firewall/ufw.sh
 
+setup_firewall
+
 # Call functions
 install_git
 install_docker

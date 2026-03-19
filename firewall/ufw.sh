@@ -36,7 +36,29 @@ open_port_if_needed() {
     echo "Current UFW status:"
     sudo ufw status
 }
-
 # Example usage:
 # open_port_if_needed 3000 tcp
 # open_port_if_needed 53 udp
+
+
+
+
+
+setup_firewall() {
+  echo "🔒 Configuring firewall..."
+
+  # Reset everything
+  ufw --force reset
+
+  # Default rules
+  ufw default deny incoming
+  ufw default allow outgoing
+
+  # Allow SSH (VERY important or you will lock yourself out)
+  ufw allow 22/tcp
+
+  # Enable firewall
+  ufw --force enable
+
+  echo "✅ Firewall enabled (all ports closed except SSH)"
+}
