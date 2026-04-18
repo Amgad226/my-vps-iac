@@ -7,7 +7,7 @@ services:
       context: .
     image: amgad226/nest
     ports:
-      - "127.0.0.1:3005:3000"
+      - "3005:3000"
     depends_on:
       - dev_redis
       - dev_db
