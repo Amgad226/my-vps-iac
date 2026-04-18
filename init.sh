@@ -19,33 +19,33 @@ validate_secrets
 source ./install/git.sh
 source ./install/docker.sh
 source ./install/tree.sh
+source ./install/nginx.sh
 source ./login/ghcr.sh
 source ./firewall/ufw.sh
-
 setup_firewall_strict
 
 # Call functions
 install_git
 install_docker
 install_tree
-
+install_nginx
 login_to_ghcr
 
 bash ./login/ghcr.sh
 
 open_port_if_needed 80
-sudo bash ./projects/portfolio/run_portfolio.sh
+bash ./projects/portfolio/run_portfolio.sh
 
 open_port_if_needed 3000
-sudo bash ./projects/tracking-gps-server/run_gps.sh
+bash ./projects/tracking-gps-server/run_gps.sh
 
 open_port_if_needed 51821 tcp
 open_port_if_needed 51820 udp
-sudo bash ./projects/wg-easy/run_wg.sh
+bash ./projects/wg-easy/run_wg.sh
 
 
 open_port_if_needed 5000
-sudo bash ./projects/image-compressor/run_image_compressor.sh
+bash ./projects/image-compressor/run_image_compressor.sh
 
 
 
@@ -55,11 +55,13 @@ open_port_if_needed 3005
 open_port_if_needed 3020
 open_port_if_needed 3007
 open_port_if_needed 8080
-sudo bash ./projects/york/run_york.sh
+bash ./projects/york/run_york.sh
 
 
 
 open_port_if_needed 5001
-sudo bash ./projects/source-safe/run_source_safe.sh
+bash ./projects/source-safe/run_source_safe.sh
+
+bash ./nginx/setup_nginx.sh
 
 echo "🎉 VPS setup complete!"

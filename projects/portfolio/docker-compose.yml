@@ -23,7 +23,7 @@ services:
     image: nginx:alpine
     container_name: laravel_nginx
     ports:
-      - "127.0.0.1:80:80"
+      - "127.0.0.1:8088:80"
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - laravel-storage:/var/www/html/storage/app
