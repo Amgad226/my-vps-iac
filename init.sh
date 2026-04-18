@@ -9,6 +9,12 @@ fi
 
 echo "🚀 Starting VPS setup..."
 
+
+
+source ./scripts/secrets/validate-secrets.sh
+validate_secrets
+
+
 # Load external scripts
 source ./install/git.sh
 source ./install/docker.sh

@@ -5,7 +5,6 @@ set -e
 # -------------------------------
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT="$SCRIPT_DIR"        # if docker-compose.yml is in same folder
-ENVS_DIR="$SCRIPT_DIR/../../envs" # adjust relative to script location
 
 # -------------------------------
 # Check for docker-compose.yml
@@ -20,11 +19,11 @@ fi
 # -------------------------------
 # Copy env file
 # -------------------------------
-if [ -f "$ENVS_DIR/source-safe.env" ]; then
-    cp "$ENVS_DIR/source-safe.env" "./.env"
+if [ -f "$HOME/secrets/source-safe.env" ]; then
+    cp "$HOME/secrets/source-safe.env" "./.env"
     echo "✅ envs/source-safe.env to ./.env"
 else
-    echo "⚠ No env file found at $ENVS_DIR, skipping copy"
+    echo "⚠ No env file found at $HOME/secrets, skipping copy"
 fi
 
 
