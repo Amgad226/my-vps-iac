@@ -11,6 +11,7 @@ WEB_ROOT="/var/www/vps-projects"
 NGINX_CONF="/etc/nginx/sites-available/vps-projects"
 NGINX_LINK="/etc/nginx/sites-enabled/vps-projects"
 NGINX_DEFAULT_LINK="/etc/nginx/sites-enabled/default"
+NGINX_DEFAULT_CONF="/etc/nginx/conf.d/default.conf"
 
 echo "🚀 Setting up Nginx reverse proxy..."
 
@@ -39,7 +40,8 @@ TMP_CONF="$(mktemp)"
 
 cat > "$TMP_CONF" <<EOF
 server {
-    listen 80;
+    listen 80 default_server;
+    listen [::]:80 default_server;
     server_name _;
 
     root $WEB_ROOT;
@@ -85,8 +87,6 @@ while IFS="|" read -r name path port; do
     }
 
     location ^~ $path/ {
-        rewrite ^$path/?(.*)$ /\$1 break;
-
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -96,7 +96,8 @@ while IFS="|" read -r name path port; do
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
 
-        proxy_pass http://127.0.0.1:$port;
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:$port/;
     }
 
 EOF
@@ -112,13 +113,19 @@ echo "📄 Moving config to Nginx..."
 
 $SUDO cp "$OUT_CONF" "$NGINX_CONF"
 
-if [ ! -L "$NGINX_LINK" ]; then
-  $SUDO ln -s "$NGINX_CONF" "$NGINX_LINK"
+if [ -e "$NGINX_LINK" ] && [ ! -L "$NGINX_LINK" ]; then
+  echo "🧹 Removing non-symlink: $NGINX_LINK"
+  $SUDO rm -f "$NGINX_LINK"
 fi
+$SUDO ln -sf "$NGINX_CONF" "$NGINX_LINK"
 
 if [ -e "$NGINX_DEFAULT_LINK" ]; then
   echo "🧹 Disabling default Nginx site..."
-  $SUDO mv "$NGINX_DEFAULT_LINK" "${NGINX_DEFAULT_LINK}.disabled" || true
+  $SUDO rm -f "$NGINX_DEFAULT_LINK" || true
+fi
+if [ -e "$NGINX_DEFAULT_CONF" ]; then
+  echo "🧹 Disabling conf.d default site..."
+  $SUDO mv "$NGINX_DEFAULT_CONF" "${NGINX_DEFAULT_CONF}.disabled" || true
 fi
 
 echo "🔍 Testing Nginx config..."
