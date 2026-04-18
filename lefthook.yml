@@ -1,4 +1,0 @@
-pre-commit:
-  commands:
-    docker-ports:
-      run: bash hooks/pre-commit

@@ -1,8 +1,0 @@
-# Host ports that are allowed to be publicly exposed (0.0.0.0) in docker-compose.
-# Anything not listed here should be bound to localhost like: 127.0.0.1:HOST:CONTAINER
-#
-# Common safe defaults:
-80
-443
-51820
-51821
