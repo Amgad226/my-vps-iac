@@ -31,8 +31,8 @@ SECRETS_FOLDER="/home/$REAL_USER/secrets"
 
 
 if [ -f "$SECRETS_FOLDER/source-safe.env" ]; then
-    cp "$SECRETS_FOLDER/source-safe.env" "./.env"
-    echo "✅ envs/source-safe.env to ./.env"
+    cp "$SECRETS_FOLDER/source-safe.env" "$PROJECT_ROOT/.env"
+    echo  "✅ $SECRETS_FOLDER/source-safe.env" "$PROJECT_ROOT/.env"
 else
     echo "❌ No env file found at $SECRETS_FOLDER, skipping copy"
 fi
