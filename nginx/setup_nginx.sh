@@ -85,6 +85,10 @@ while IFS="|" read -r name path port; do
 
   echo "📦 Adding $name → $path → $port"
 
+  if [ "$path" = "/york" ]; then
+    HAS_YORK_FRONTEND="1"
+  fi
+
   cat >> "$TMP_CONF" <<EOF
     location = $path {
         return 301 $path/;
@@ -107,6 +111,17 @@ while IFS="|" read -r name path port; do
 EOF
 
 done < "$PROJECTS_FILE"
+
+if [ "${HAS_YORK_FRONTEND:-}" = "1" ]; then
+  cat >> "$TMP_CONF" <<'EOF'
+    # Next.js often emits absolute `/_next/...` asset URLs even when behind a subpath.
+    # Redirect them to the proxied subpath so assets load under `/york/`.
+    location ^~ /_next/ {
+        return 301 /york$request_uri;
+    }
+
+EOF
+fi
 
 echo "}" >> "$TMP_CONF"
 
