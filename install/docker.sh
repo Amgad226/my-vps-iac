@@ -42,6 +42,6 @@ install_docker() {
     echo "🚀 Adding user '$SUDO_USER' to docker group..."
     usermod -aG docker $SUDO_USER
     echo "✅ User '$SUDO_USER' added to docker group"
-    echo "⚠ You need to log out and log back in for this to take effect, or run: newgrp docker"
+    echo "❌ You need to log out and log back in for this to take effect, or run: newgrp docker"
   fi
 }

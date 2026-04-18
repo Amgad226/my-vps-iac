@@ -24,7 +24,7 @@ if [ -f "$ENVS_DIR/image_compressor.env" ]; then
     cp "$ENVS_DIR/image_compressor.env" "./.env"
     echo "✅ envs/image_compressor.env to ./.env"
 else
-    echo "⚠ No env file found at $ENVS_DIR, skipping copy"
+    echo "❌ No env file found at $ENVS_DIR, skipping copy"
 fi
 
 

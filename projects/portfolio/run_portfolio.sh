@@ -24,7 +24,7 @@ if [ -f "$ENVS_DIR/portfolio.env" ]; then
     cp "$ENVS_DIR/portfolio.env" "./.env"
     echo "✅ Copied envs to portfolio.env"
 else
-    echo "⚠ No env file found at $ENVS_DIR, skipping copy"
+    echo "❌ No env file found at $ENVS_DIR, skipping copy"
 fi
 
 
