@@ -5,7 +5,8 @@
 # =========================
 
 SECRETS_FOLDER="$HOME/secrets"
-
+echo "HOME"
+echo $HOME
 # List of required files
 REQUIRED_FILES=(
   "PAT_SECRET"
