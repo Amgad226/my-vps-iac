@@ -19,11 +19,12 @@ fi
 # -------------------------------
 # Copy env file
 # -------------------------------
-if [ -f "$HOME/secrets/source-safe.env" ]; then
-    cp "$HOME/secrets/source-safe.env" "./.env"
+SECRETS_FOLDER="$(eval echo ~${SUDO_USER:-$USER})/secrets"
+if [ -f "$SECRETS_FOLDER/source-safe.env" ]; then
+    cp "$SECRETS_FOLDER/source-safe.env" "./.env"
     echo "✅ envs/source-safe.env to ./.env"
 else
-    echo "⚠ No env file found at $HOME/secrets, skipping copy"
+    echo "⚠ No env file found at $SECRETS_FOLDER, skipping copy"
 fi
 
 

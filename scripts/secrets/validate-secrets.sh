@@ -1,13 +1,10 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # =========================
 # Secrets Validation Script
 # =========================
 
-SECRETS_FOLDER="$HOME/secrets"
-echo "HOME"
-echo $HOME
-# List of required files
+SECRETS_FOLDER="$(eval echo ~${SUDO_USER:-$USER})/secrets"
 REQUIRED_FILES=(
   "PAT_SECRET"
   "source-safe.env"
