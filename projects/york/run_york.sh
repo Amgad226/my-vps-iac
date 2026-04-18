@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT="$SCRIPT_DIR"     
 
-
+chmod +x ./york_v1/docker-entrypoint.sh
 YORK_COMPOSE_FILE="$PROJECT_ROOT/docker/york_v1/docker-compose.yml"
 
 if [ ! -f "$YORK_COMPOSE_FILE" ]; then
