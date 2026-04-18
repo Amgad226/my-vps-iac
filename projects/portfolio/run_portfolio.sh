@@ -27,7 +27,7 @@ else
     echo "❌ No env file found at $ENVS_DIR, skipping copy"
 fi
 
-chmod 777 start.sh
+chmod 777 "$PROJECT_ROOT/start.sh"
 # -------------------------------
 # Run Docker Compose
 # -------------------------------
