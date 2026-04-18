@@ -7,7 +7,7 @@ services:
       context: .
     image: amgad226/staging-nest
     ports:
-      - "3007:3000"
+      - "127.0.0.1:3007:3000"
     depends_on:
       - staging_redis
       - staging_db

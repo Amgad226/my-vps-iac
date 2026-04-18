@@ -1,0 +1,62 @@
+#!/bin/bash
+
+FIX_MODE=false
+
+if [[ "$1" == "--fix" ]]; then
+  FIX_MODE=true
+  echo "🛠 Auto-fix mode enabled"
+fi
+
+echo "🔍 Checking docker-compose files..."
+
+# FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E 'docker-compose.*\.ya?ml' || true)
+FILES=$(find . -type f -name "docker-compose*.yml" -o -name "docker-compose*.yaml")
+[ -z "$FILES" ] && exit 0
+
+FAILED=0
+
+for FILE in $FILES; do
+  echo "Checking $FILE..."
+
+  # Find unsafe port lines
+  MATCHES=$(grep -nE '^\s*-\s*"?([0-9]+:[0-9]+)"?' "$FILE")
+
+  if [ -n "$MATCHES" ]; then
+    while IFS= read -r LINE; do
+      LINE_NO=$(echo "$LINE" | cut -d: -f1)
+      VALUE=$(echo "$LINE" | cut -d: -f2-)
+
+      PORT=$(echo "$VALUE" | grep -oE '[0-9]+:[0-9]+')
+
+      if [[ "$PORT" =~ ^([0-9]+):([0-9]+)$ ]]; then
+        SAFE="127.0.0.1:$PORT"
+
+        if [ "$FIX_MODE" = true ]; then
+          echo "🔧 Fixing $FILE:$LINE_NO → $SAFE"
+
+          # Replace line safely
+          sed -i "${LINE_NO}s|$PORT|$SAFE|" "$FILE"
+
+          # Re-add file to staging
+          git add "$FILE"
+        else
+          echo "❌ Unsafe port in $FILE:$LINE_NO → $PORT"
+          FAILED=1
+        fi
+      fi
+    done <<< "$MATCHES"
+  fi
+done
+
+if [ "$FIX_MODE" = true ]; then
+  echo "✅ Auto-fix complete"
+  exit 0
+fi
+
+if [ $FAILED -eq 1 ]; then
+  echo "🚫 Commit blocked. Use 127.0.0.1 binding or run with --fix"
+  exit 1
+fi
+
+echo "✅ All docker ports are safe."
+exit 0
