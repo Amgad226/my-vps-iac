@@ -19,7 +19,7 @@ services:
     container_name: certificate_db_container
     restart: always
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: amjadalwttarkingalkinog
@@ -35,7 +35,7 @@ services:
     depends_on:
       - certificate_db
     ports:
-      - "8888:80"
+      - "127.0.0.1:8888:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: amjad@king.net
       PGADMIN_DEFAULT_PASSWORD: amjadalwttarkingalkinog

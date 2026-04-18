@@ -21,7 +21,7 @@ services:
     container_name: staging_pgdb
     restart: always
     ports:
-      - "5433:5433"
+      - "127.0.0.1:5433:5433"
     environment:
       PGPORT: 5433
       POSTGRES_USER: admin
@@ -35,7 +35,7 @@ services:
     container_name: staging_redis
     image: redis:7.2.4
     ports:
-      - "6380:6379"
+      - "127.0.0.1:6380:6379"
     volumes:
       - staging_redis_data:/staging_data
 
@@ -45,7 +45,7 @@ services:
     depends_on:
       - staging_db
     ports:
-      - "8888:80"
+      - "127.0.0.1:8888:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: amjad@king.net
       PGADMIN_DEFAULT_PASSWORD: amjadalwttarkingalkinog
