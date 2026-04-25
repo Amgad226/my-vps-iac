@@ -89,12 +89,15 @@ while IFS="|" read -r name path port; do
     HAS_YORK_FRONTEND="1"
   fi
 
+  PROJECT_REWRITE_PATH="$(echo "$path" | sed 's#/$##')"
+  
   cat >> "$TMP_CONF" <<EOF
     location = $path {
         return 301 $path/;
     }
 
     location ^~ $path/ {
+      rewrite ^${PROJECT_REWRITE_PATH}/?(.*)$ /\$1 break;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -106,7 +109,6 @@ while IFS="|" read -r name path port; do
 
         proxy_redirect off;
         proxy_pass http://127.0.0.1:$port/;
-        rewrite ^$path/?(.*)$ /$1 break;
 
     }
 
