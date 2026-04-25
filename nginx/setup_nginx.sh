@@ -106,6 +106,8 @@ while IFS="|" read -r name path port; do
 
         proxy_redirect off;
         proxy_pass http://127.0.0.1:$port/;
+        rewrite ^/$path/?(.*)$ /$1 break;
+
     }
 
 EOF
