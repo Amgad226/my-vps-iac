@@ -81,56 +81,56 @@ login_to_ghcr
 
 bash ./login/ghcr.sh
 
-# # ---------- Execution phase ----------
-# echo ""
-# echo "🚀 Running selected projects..."
-# echo ""
+# ---------- Execution phase ----------
+echo ""
+echo "🚀 Running selected projects..."
+echo ""
 
-# if $RUN_PORTFOLIO; then
-#   echo "➡️ Running Portfolio"
-#   open_port_if_needed 80
-#   bash ./projects/portfolio/run_portfolio.sh
-# fi
+if $RUN_PORTFOLIO; then
+  echo "➡️ Running Portfolio"
+  open_port_if_needed 80
+  bash ./projects/portfolio/run_portfolio.sh
+fi
 
-# if $RUN_GPS; then
-#   echo "➡️ Running GPS Server"
-#   open_port_if_needed 3000
-#   bash ./projects/tracking-gps-server/run_gps.sh
-# fi
+if $RUN_GPS; then
+  echo "➡️ Running GPS Server"
+  open_port_if_needed 3000
+  bash ./projects/tracking-gps-server/run_gps.sh
+fi
 
-# if $RUN_WG; then
-#   echo "➡️ Running WireGuard"
-#   open_port_if_needed 51821 tcp
-#   open_port_if_needed 51820 udp
-#   bash ./projects/wg-easy/run_wg.sh
-# fi
+if $RUN_WG; then
+  echo "➡️ Running WireGuard"
+  open_port_if_needed 51821 tcp
+  open_port_if_needed 51820 udp
+  bash ./projects/wg-easy/run_wg.sh
+fi
 
-# if $RUN_IMAGE; then
-#   echo "➡️ Running Image Compressor"
-#   open_port_if_needed 5000
-#   bash ./projects/image-compressor/run_image_compressor.sh
-# fi
+if $RUN_IMAGE; then
+  echo "➡️ Running Image Compressor"
+  open_port_if_needed 5000
+  bash ./projects/image-compressor/run_image_compressor.sh
+fi
 
-# if $RUN_YORK; then
-#   echo "➡️ Running York"
-#   open_port_if_needed 3011
-#   open_port_if_needed 3005
-#   open_port_if_needed 3020
-#   open_port_if_needed 3007
-#   open_port_if_needed 8080
-#   bash ./projects/york/run_york.sh
-# fi
+if $RUN_YORK; then
+  echo "➡️ Running York"
+  open_port_if_needed 3011
+  open_port_if_needed 3005
+  open_port_if_needed 3020
+  open_port_if_needed 3007
+  open_port_if_needed 8080
+  bash ./projects/york/run_york.sh
+fi
 
-# if $RUN_SOURCE_SAFE; then
-#   echo "➡️ Running Source Safe"
-#   open_port_if_needed 5001
-#   bash ./projects/source-safe/run_source_safe.sh
-# fi
+if $RUN_SOURCE_SAFE; then
+  echo "➡️ Running Source Safe"
+  open_port_if_needed 5001
+  bash ./projects/source-safe/run_source_safe.sh
+fi
 
-# if $RUN_NGINX; then
-#   echo "➡️ Setting up Nginx"
-#   bash ./nginx/setup_nginx.sh
-# fi
+if $RUN_NGINX; then
+  echo "➡️ Setting up Nginx"
+  bash ./nginx/setup_nginx.sh
+fi
 
-# echo ""
+echo ""
 echo "🎉 VPS setup complete!"
