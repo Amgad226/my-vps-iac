@@ -37,14 +37,24 @@ echo ""
 echo "🧠 Configuration phase (answer all questions first)"
 echo ""
 
-ask "Run Portfolio?" && RUN_PORTFOLIO=true
-ask "Run Tracking GPS Server?" && RUN_GPS=true
-ask "Run WireGuard (wg-easy)?" && RUN_WG=true
-ask "Run Image Compressor?" && RUN_IMAGE=true
-ask "Run York Project?" && RUN_YORK=true
-ask "Run Source Safe?" && RUN_SOURCE_SAFE=true
-ask "Setup Nginx?" && RUN_NGINX=true
-
+# New global question
+if ask "Run ALL services?"; then
+    RUN_PORTFOLIO=true
+    RUN_GPS=true
+    RUN_WG=true
+    RUN_IMAGE=true
+    RUN_YORK=true
+    RUN_SOURCE_SAFE=true
+    RUN_NGINX=true
+else
+    ask "Run Portfolio?" && RUN_PORTFOLIO=true
+    ask "Run Tracking GPS Server?" && RUN_GPS=true
+    ask "Run WireGuard (wg-easy)?" && RUN_WG=true
+    ask "Run Image Compressor?" && RUN_IMAGE=true
+    ask "Run York Project?" && RUN_YORK=true
+    ask "Run Source Safe?" && RUN_SOURCE_SAFE=true
+    ask "Setup Nginx?" && RUN_NGINX=true
+fi
 echo ""
 echo "⚙️ Installing base system..."
 echo ""
