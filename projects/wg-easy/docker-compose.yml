@@ -3,7 +3,7 @@ services:
     container_name: wg-easy
 
     volumes:
-      - ./wg-easy:/etc/wireguard
+      - ../../../wg-easy:/etc/wireguard
       # - ${HOME}/vpn/index.html:/app/www/index.html
 
     ports:
