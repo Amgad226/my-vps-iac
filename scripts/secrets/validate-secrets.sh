@@ -4,13 +4,14 @@
 # Secrets Validation Script
 # =========================
 
-SECRETS_FOLDER="$(eval echo ~${SUDO_USER:-$USER})/secrets"
+
+
+validate_secrets() {
+  SECRETS_FOLDER="$(eval echo ~${SUDO_USER:-$USER})/secrets"
 REQUIRED_FILES=(
   "PAT_SECRET"
   "source-safe.env"
 )
-
-validate_secrets() {
   echo "🔍 Checking secrets folder: $SECRETS_FOLDER"
 
   # check folder exists

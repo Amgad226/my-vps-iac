@@ -4,12 +4,13 @@
 # Secrets Validation Script
 # =========================
 
-SQLITE_DATABASES_FOLDER="$(eval echo ~${SUDO_USER:-$USER})/sqlite-databases"
+
+validate_sqllite_databases() {
+  SQLITE_DATABASES_FOLDER="$(eval echo ~${SUDO_USER:-$USER})/sqlite-databases"
 REQUIRED_FILES=(
   "gps.db"
 )
 
-validate_sqllite_databases() {
   echo "🔍 Checking sql databases folder: $SQLITE_DATABASES_FOLDER"
 
   # check folder exists
