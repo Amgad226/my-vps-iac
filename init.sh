@@ -51,8 +51,9 @@ echo ""
 
 # ---------- Base setup ----------
 source ./scripts/secrets/validate-secrets.sh
+source ./scripts/secrets/validate-sqllite-databases.sh
 validate_secrets
-
+validate_sqllite_databases
 source ./install/git.sh
 source ./install/docker.sh
 source ./install/tree.sh

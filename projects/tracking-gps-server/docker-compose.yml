@@ -9,4 +9,4 @@ services:
       - .env
 
     volumes:
-      - ./dev.db:/app/dev.db
+      - /home/admin/sqlite-databases/gps.db:/app/dev.db
