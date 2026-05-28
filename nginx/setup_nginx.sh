@@ -282,8 +282,8 @@ while IFS="|" read -r name path port; do
           <span class="badge">$name</span>
           <h2>$DISPLAY_NAME</h2>
           <div class="links">
-            <a href="$path">Path →</a>
-            <a href="https://$SUBDOMAIN">Subdomain →</a>
+            <a target="_blank" href="$path">Path →</a>
+            <a target="_blank" href="https://$SUBDOMAIN">Subdomain →</a>
           </div>
         </div>
 EOF
