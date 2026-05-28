@@ -91,9 +91,11 @@ echo ""
 echo "🚀 Running selected projects..."
 echo ""
 
+open_port_if_needed 80
+open_port_if_needed 443
+
 if $RUN_PORTFOLIO; then
   echo "➡️ Running Portfolio"
-  open_port_if_needed 80
   bash ./projects/portfolio/run_portfolio.sh
 fi
 
