@@ -79,13 +79,15 @@ EOF
 
 DOMAINS=("$BASE_DOMAIN")
 
-while IFS="|" read -r name path port; do
+while IFS="|" read -r name path port flags; do
   name="${name#"${name%%[![:space:]]*}"}"
   name="${name%"${name##*[![:space:]]}"}"
   path="${path#"${path%%[![:space:]]*}"}"
   path="${path%"${path##*[![:space:]]}"}"
   port="${port#"${port%%[![:space:]]*}"}"
   port="${port%"${port##*[![:space:]]}"}"
+  flags="${flags#"${flags%%[![:space:]]*}"}"
+  flags="${flags%"${flags##*[![:space:]]}"}"
 
   if [ -z "$name" ] || [[ "$name" == \#* ]]; then
     continue
@@ -103,6 +105,15 @@ while IFS="|" read -r name path port; do
 
   echo "📦 Adding $name → $path → $port"
 
+  EXTRA_CONF=""
+  if [[ "$flags" == *"large"* ]]; then
+    EXTRA_CONF="        client_max_body_size 1G;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_request_buffering off;"
+  fi
+
   cat >> "$TMP_CONF" <<EOF
     location = $path {
         return 301 $path/;
@@ -119,6 +130,7 @@ while IFS="|" read -r name path port; do
         proxy_set_header Connection "upgrade";
 
         proxy_redirect off;
+$EXTRA_CONF
         proxy_pass http://127.0.0.1:$port/;
     }
 
@@ -130,13 +142,15 @@ done < "$PROJECTS_FILE"
 echo "}" >> "$TMP_CONF"
 
 # --- Subdomain server blocks ---
-while IFS="|" read -r name path port; do
+while IFS="|" read -r name path port flags; do
   name="${name#"${name%%[![:space:]]*}"}"
   name="${name%"${name##*[![:space:]]}"}"
   path="${path#"${path%%[![:space:]]*}"}"
   path="${path%"${path##*[![:space:]]}"}"
   port="${port#"${port%%[![:space:]]*}"}"
   port="${port%"${port##*[![:space:]]}"}"
+  flags="${flags#"${flags%%[![:space:]]*}"}"
+  flags="${flags%"${flags##*[![:space:]]}"}"
 
   if [ -z "$name" ] || [[ "$name" == \#* ]]; then
     continue
@@ -151,6 +165,15 @@ while IFS="|" read -r name path port; do
   fi
 
   SUBDOMAIN="$name.$BASE_DOMAIN"
+
+  EXTRA_CONF=""
+  if [[ "$flags" == *"large"* ]]; then
+    EXTRA_CONF="        client_max_body_size 1G;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_request_buffering off;"
+  fi
 
   cat >> "$TMP_CONF" <<EOF
 
@@ -170,6 +193,7 @@ server {
         proxy_set_header Connection "upgrade";
 
         proxy_redirect off;
+$EXTRA_CONF
         proxy_pass http://127.0.0.1:$port/;
     }
 }
@@ -254,13 +278,15 @@ HTMLHEAD
 # Inject actual base domain into the placeholder
 sed -i "s/BASE_DOMAIN_PLACEHOLDER/$BASE_DOMAIN/g" "$DASHBOARD_TMP"
 
-while IFS="|" read -r name path port; do
+while IFS="|" read -r name path port flags; do
   name="${name#"${name%%[![:space:]]*}"}"
   name="${name%"${name##*[![:space:]]}"}"
   path="${path#"${path%%[![:space:]]*}"}"
   path="${path%"${path##*[![:space:]]}"}"
   port="${port#"${port%%[![:space:]]*}"}"
   port="${port%"${port##*[![:space:]]}"}"
+  flags="${flags#"${flags%%[![:space:]]*}"}"
+  flags="${flags%"${flags##*[![:space:]]}"}"
 
   if [ -z "$name" ] || [[ "$name" == \#* ]]; then
     continue
