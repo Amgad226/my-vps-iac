@@ -10,4 +10,4 @@ services:
       - /home/admin/secrets/map-trips.env
     restart: unless-stopped
     volumes:
-      - /home/admin/sqlite-databases/map-trips.db:/app/dev.db
+      - /home/admin/sqlite-databases/map-trips:/app/data
