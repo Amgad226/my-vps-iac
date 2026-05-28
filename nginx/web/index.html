@@ -1,145 +1,144 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VPS Projects Dashboard</title>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #0f172a, #020617);
-            color: #e2e8f0;
-            padding: 20px;
-        }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: linear-gradient(135deg, #0f172a, #020617);
+        color: #e2e8f0;
+        padding: 20px;
+      }
 
+      h1 {
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2rem;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: auto;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+      }
+
+      .card {
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        padding: 20px;
+        border-radius: 12px;
+        transition: 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        border-color: #38bdf8;
+        box-shadow: 0 10px 25px rgba(56, 189, 248, 0.15);
+      }
+
+      .card h2 {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+      }
+
+      .card a {
+        display: inline-block;
+        margin-top: 10px;
+        color: #38bdf8;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .card a:hover {
+        text-decoration: underline;
+      }
+
+      /* Mobile tweaks */
+      @media (max-width: 500px) {
         h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2rem;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: auto;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
+          font-size: 1.5rem;
         }
 
         .card {
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            padding: 20px;
-            border-radius: 12px;
-            transition: 0.3s ease;
-            position: relative;
-            overflow: hidden;
+          padding: 16px;
         }
-
-        .card:hover {
-            transform: translateY(-5px);
-            border-color: #38bdf8;
-            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.15);
-        }
-
-        .card h2 {
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-        }
-
-        .card a {
-            display: inline-block;
-            margin-top: 10px;
-            color: #38bdf8;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .card a:hover {
-            text-decoration: underline;
-        }
-
-        /* Mobile tweaks */
-        @media (max-width: 500px) {
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            .card {
-                padding: 16px;
-            }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 VPS Projects</h1>
 
-<div class="container">
-    <h1>🚀 VPS Projects</h1>
-
-    <div class="grid">
-
+      <div class="grid">
         <div class="card">
-            <h2>Portfolio</h2>
-            <a href="/portfolio">Open →</a>
+          <h2>Portfolio</h2>
+          <a href="/portfolio">Open →</a>
         </div>
 
         <div class="card">
-            <h2>GPS</h2>
-            <a href="/gps">Open →</a>
+          <h2>GPS</h2>
+          <a href="/gps">Open →</a>
         </div>
 
         <div class="card">
-            <h2>WG VPN</h2>
-            <a href="/vpn">Open →</a>
+          <h2>WG VPN</h2>
+          <a href="/vpn">Open →</a>
         </div>
 
         <div class="card">
-            <h2>Image Compressor</h2>
-            <a href="/image">Open →</a>
+          <h2>Image Compressor</h2>
+          <a href="/image">Open →</a>
         </div>
 
         <div class="card">
-            <h2>York Certificate</h2>
-            <a href="/york-certificate">Open →</a>
+          <h2>York Certificate</h2>
+          <a href="/york-certificate">Open →</a>
         </div>
 
         <div class="card">
-            <h2>York Streaming</h2>
-            <a href="/york-streaming">Open →</a>
+          <h2>York Streaming</h2>
+          <a href="/york-streaming">Open →</a>
         </div>
 
         <div class="card">
-            <h2>York Frontend</h2>
-            <a href="/york">Open →</a>
+          <h2>York Frontend</h2>
+          <a href="/york">Open →</a>
         </div>
 
         <div class="card">
-            <h2>York V1</h2>
-            <a href="/york-v1">Open →</a>
+          <h2>York V1</h2>
+          <a href="/york-v1">Open →</a>
         </div>
 
         <div class="card">
-            <h2>Source Safe</h2>
-            <a href="/source-safe">Open →</a>
+          <h2>Source Safe</h2>
+          <a href="/source-safe">Open →</a>
         </div>
 
-                <div class="card">
-            <h2>Source Safe</h2>
-            <a href="/source-safe">Open →</a>
+        <div class="card">
+          <h2>Map trips</h2>
+          <a href="/map-trips">Open →</a>
         </div>
-
+      </div>
     </div>
-</div>
-
-</body>
+  </body>
 </html>
