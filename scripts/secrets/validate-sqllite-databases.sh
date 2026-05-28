@@ -24,8 +24,8 @@ REQUIRED_FILES=(
 
   for file in "${REQUIRED_FILES[@]}"; do
     if [ -f "$SQLITE_DATABASES_FOLDER/$file" ]; then
-      chmod -R 755 "$SQLITE_DATABASES_FOLDER/$file"
-      echo "✔ $file exists and permissions set to 755"
+      chmod -R 777 "$SQLITE_DATABASES_FOLDER/$file"
+      echo "✔ $file exists and permissions set to 777"
     else
       echo "✖ $file missing"
       missing=1
