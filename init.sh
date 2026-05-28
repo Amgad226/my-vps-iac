@@ -71,6 +71,7 @@ source ./install/git.sh
 source ./install/docker.sh
 source ./install/tree.sh
 source ./install/nginx.sh
+source ./install/certbot.sh
 source ./login/ghcr.sh
 source ./firewall/ufw.sh
 
@@ -80,6 +81,7 @@ install_git
 install_docker
 install_tree
 install_nginx
+install_certbot
 login_to_ghcr
 
 bash ./login/ghcr.sh
