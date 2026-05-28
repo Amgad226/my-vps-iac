@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  map-trips:
+    image: ghcr.io/amgad226/map-trips:latest
+    container_name: map-trips
+    ports:
+      - "127.0.0.1:3001:3000"
+    env_file:
+      - /home/admin/secrets/map-trips.env
+    restart: unless-stopped
+    volumes:
+      - /home/admin/sqlite-databases/map-trips.db:/app/dev.db

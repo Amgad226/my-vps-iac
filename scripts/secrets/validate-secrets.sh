@@ -11,6 +11,7 @@ validate_secrets() {
 REQUIRED_FILES=(
   "PAT_SECRET"
   "source-safe.env"
+  "map-trips.env"
 )
   echo "🔍 Checking secrets folder: $SECRETS_FOLDER"
 

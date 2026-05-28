@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =========================
-# Secrets Validation Script
+# Sqlite Databases Validation Script
 # =========================
 
 
@@ -9,6 +9,7 @@ validate_sqllite_databases() {
   SQLITE_DATABASES_FOLDER="$(eval echo ~${SUDO_USER:-$USER})/sqlite-databases"
 REQUIRED_FILES=(
   "gps.db"
+  "map-trips.db"
 )
 
   echo "🔍 Checking sql databases folder: $SQLITE_DATABASES_FOLDER"

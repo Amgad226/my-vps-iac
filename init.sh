@@ -32,6 +32,7 @@ RUN_IMAGE=false
 RUN_YORK=false
 RUN_SOURCE_SAFE=false
 RUN_NGINX=false
+RUN_MAP_TRIPS=false
 
 echo ""
 echo "🧠 Configuration phase (answer all questions first)"
@@ -46,6 +47,7 @@ if ask "Run ALL services?"; then
     RUN_YORK=true
     RUN_SOURCE_SAFE=true
     RUN_NGINX=true
+    RUN_MAP_TRIPS=true
 else
     ask "Run Portfolio?" && RUN_PORTFOLIO=true
     ask "Run Tracking GPS Server?" && RUN_GPS=true
@@ -53,6 +55,7 @@ else
     ask "Run Image Compressor?" && RUN_IMAGE=true
     ask "Run York Project?" && RUN_YORK=true
     ask "Run Source Safe?" && RUN_SOURCE_SAFE=true
+    ask "Run Map Trips?" && RUN_MAP_TRIPS=true
     ask "Setup Nginx?" && RUN_NGINX=true
 fi
 echo ""
@@ -125,6 +128,12 @@ if $RUN_SOURCE_SAFE; then
   echo "➡️ Running Source Safe"
   open_port_if_needed 5001
   bash ./projects/source-safe/run_source_safe.sh
+fi
+
+if $RUN_MAP_TRIPS; then
+  echo "➡️ Running Map Trips"
+  open_port_if_needed 3001
+  bash ./projects/map-trips/run_map_trips.sh
 fi
 
 if $RUN_NGINX; then
