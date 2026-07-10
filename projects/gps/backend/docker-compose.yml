@@ -6,8 +6,8 @@ services:
     container_name: gps-backend
     restart: always
     ports:
-      - "127.0.0.1:3100:3000"
-      - "127.0.0.1:5220:5000"
+      - "0.0.0.0:3100:3000"
+      - "0.0.0.0:5220:5000"
     env_file:
       - .env
     depends_on:
