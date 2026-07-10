@@ -35,6 +35,10 @@ Internet
    │
    ├──► Docker containers on localhost ports
    │      • Portfolio          127.0.0.1:8088
+   │      • GPS Dashboard      127.0.0.1:9100
+   │      • GPS Backend API    127.0.0.1:3100
+   │      • GPS Backend WS     127.0.0.1:5220
+   │      • GPS MQTT broker    0.0.0.0:1883/8883/8083/8084/18083
    │      • WireGuard UI       0.0.0.0:51821 (TCP)
    │      • WireGuard tunnel   0.0.0.0:51820 (UDP)
    │      • Image Compressor   127.0.0.1:5000
@@ -76,14 +80,15 @@ Internet
 | `install/certbot.sh` | Installs Certbot + Nginx plugin. |
 | `firewall/ufw.sh` | UFW helpers: `setup_firewall_strict` (resets UFW, denies incoming, allows SSH) and `open_port_if_needed`. |
 | `login/ghcr.sh` | Logs Docker into GHCR using the PAT stored in `/home/admin/secrets/PAT_SECRET`. Hardcoded user `Amgad226`. |
+| `login/gitlab.sh` | Logs Docker into GitLab Container Registry using the token stored in `/home/admin/secrets/GITLAB_TOKEN`. Hardcoded user `Amgad226`. |
 | `nginx/setup_nginx.sh` | Generates Nginx config (`nginx/projects.conf`), deploys it to `/etc/nginx/sites-available/vps-projects`, syncs dashboard HTML to `/var/www/vps-projects`, disables competing default servers, reloads Nginx, and runs Certbot. |
 | `nginx/s.sh` | **Interactive helper** to create an extra Nginx site from stubs (not used by automation). |
 | `nginx/config/projects.env` | Source of truth for project name → path → port mapping used by `setup_nginx.sh`. Format: `name|path|port|flags`. |
 | `nginx/web/index.html` | Static fallback dashboard (manually edited; `setup_nginx.sh` also auto-generates a dynamic version). |
 | `secrets/` | **Sensitive files.** Contains `PAT_SECRET` and all `<project>.env` files. This directory is gitignored and must be placed on the VPS at `/home/admin/secrets` (and at `~/secrets` for validation). |
-| `scripts/secrets/validate-secrets.sh` | Validates that `~/secrets` contains every secret env file used by the projects. |
+| `scripts/secrets/validate-secrets.sh` | Validates that `/home/admin/secrets` contains every secret env file and registry token used by the projects. |
 | `scripts/secrets/validate-sqllite-databases.sh` | Validates `~/sqlite-databases/map-trips/file.db` and sets `chmod 777`. |
-| `projects/` | One directory per service. Each contains a `docker-compose.yml` and a `run_*.sh` wrapper that copies its env from `/home/admin/secrets`. |
+| `projects/` | One directory per service. Each contains a `docker-compose.yml` and a `run_*.sh` wrapper that copies its env from `/home/admin/secrets`. `projects/gps` has separate `backend/` (API + Postgres + Redis + MQTT) and `dashboard/` directories. |
 | `hooks/pre-commit` | Git hook that blocks `docker-compose*.yml` port lines not bound to `127.0.0.1`. `projects/wg-easy/docker-compose.yml` is excluded because WireGuard must bind to the host interface. Pass `--fix` to auto-correct. |
 
 ### Script categories
@@ -109,7 +114,9 @@ Internet
 
 1. Create `/home/admin/secrets/` and copy all required secret env files:
    - `PAT_SECRET` — GitHub Personal Access Token for GHCR.
+   - `GITLAB_TOKEN` — GitLab Personal Access Token for the GitLab Container Registry.
    - `source-safe.env`, `map-trips.env`, `portfolio.env`, `image-compressor.env`, `wg.env`
+   - GPS: `gps-backend.env`, `gps-dashboard.env`
    - York envs: `york-certificate.env`, `york-nest.env`, `york-next.env`, `york-staging-nest.env`, `york-v1.env`
 2. Create `/home/admin/sqlite-databases/` and provide:
    - `map-trips/file.db`
@@ -133,6 +140,7 @@ sudo bash ./init.sh
    - `install/nginx.sh` → `install_nginx`
    - `install/certbot.sh` → `install_certbot`
    - `login/ghcr.sh` → `login_to_ghcr`
+   - `login/gitlab.sh` → `login_to_gitlab`
    - `bash ./login/ghcr.sh` (legacy duplicate login)
 5. `setup_firewall_strict` — resets UFW, denies incoming, allows outgoing, opens 22/tcp.
 6. Opens 80/tcp and 443/tcp.
@@ -161,6 +169,8 @@ All runtime `.env` files are **stored in `/home/admin/secrets/`** and copied int
 | `/home/admin/secrets/portfolio.env` | `projects/portfolio/.env` | Portfolio |
 | `/home/admin/secrets/image-compressor.env` | `projects/image-compressor/.env` | Image Compressor |
 | `/home/admin/secrets/wg.env` | `projects/wg-easy/.env` | WireGuard |
+| `/home/admin/secrets/gps-backend.env` | `projects/gps/backend/.env` | GPS Backend |
+| `/home/admin/secrets/gps-dashboard.env` | `projects/gps/dashboard/.env` | GPS Dashboard |
 | `/home/admin/secrets/source-safe.env` | `projects/source-safe/.env` | Source Safe |
 | `/home/admin/secrets/map-trips.env` | `projects/map-trips/.env` | Map Trips |
 | `/home/admin/secrets/york-certificate.env` | `projects/york/docker/certificate/.env` | York Certificate |
@@ -175,6 +185,7 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 
 - Secrets live in `secrets/` (gitignored) and on the VPS at `/home/admin/secrets/` and `~/secrets/`.
 - `PAT_SECRET` is the GHCR token.
+- `GITLAB_TOKEN` is the GitLab Container Registry token.
 - **Do not commit real secrets.** The pre-commit hook only checks Docker port binding, not secrets.
 - `scripts/secrets/validate-secrets.sh` checks that every required secret env file exists before provisioning.
 
@@ -182,6 +193,7 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 
 - DNS records pointing to the VPS.
 - `/home/admin/secrets/PAT_SECRET` with GHCR read access.
+- `/home/admin/secrets/GITLAB_TOKEN` with GitLab registry read access.
 - All project env files listed above.
 - `/home/admin/sqlite-databases/map-trips/file.db`.
 - If `BASE_DOMAIN` is not `amjad.cloud`, run `nginx/setup_nginx.sh` with `BASE_DOMAIN=your.domain`.
@@ -198,6 +210,21 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 - **Run:** `bash ./projects/portfolio/run_portfolio.sh`
 - **Stop:** `cd projects/portfolio && docker compose down`
 - **Deps:** SQLite database mounted from `./database.sqlite`; `start.sh` runs migrations/config cache inside the container.
+
+### GPS Project (`projects/gps/`)
+- **Purpose:** GPS backend API + dashboard.
+- **Backend image:** `registry.gitlab.com/amgad226/gps-backend/backend:dev`
+  - Container: `gps-backend`
+  - Public ports: `127.0.0.1:3100` (API), `127.0.0.1:5220` (WS)
+  - Internal services: PostGIS on `127.0.0.1:5435`, Redis on `127.0.0.1:6381`, EMQX MQTT broker on host ports `1883/8883/8083/8084/18083`
+- **Dashboard image:** `registry.gitlab.com/amgad226/manage-fleet-pro/dashboard:dev`
+  - Container: `gps-dashboard`
+  - Public port: `127.0.0.1:9100`
+- **Run:** `bash ./projects/gps/run_gps.sh`
+- **Routes:**
+  - Dashboard: `https://amjad.cloud/gps` and `https://gps-dashboard.amjad.cloud`
+  - Backend: `https://amjad.cloud/gps-backend` and `https://gps-backend.amjad.cloud`
+- **Deps:** `gps-backend.env` and `gps-dashboard.env` copied from `/home/admin/secrets`.
 
 ### WireGuard / wg-easy (`projects/wg-easy/`)
 - **Purpose:** VPN server and web UI.
@@ -251,6 +278,14 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 | 5000 | TCP | Image Compressor | If image selected |
 | 5001 | TCP | Source Safe | If source-safe selected |
 | 3001 | TCP | Map Trips | If map-trips selected |
+| 3100 | TCP | GPS Backend API | If GPS selected |
+| 5220 | TCP | GPS Backend WS | If GPS selected |
+| 9100 | TCP | GPS Dashboard | If GPS selected |
+| 1883 | TCP | GPS MQTT (TCP) | If GPS selected |
+| 8883 | TCP | GPS MQTT (SSL) | If GPS selected |
+| 8083 | TCP | GPS MQTT (WS) | If GPS selected |
+| 8084 | TCP | GPS MQTT (WSS) | If GPS selected |
+| 18083 | TCP | GPS MQTT Dashboard | If GPS selected |
 | 51820 | UDP | WireGuard tunnel | If wg selected |
 | 51821 | TCP | WireGuard web UI | If wg selected |
 | 3011 | TCP | York Certificate | If york selected |
@@ -364,6 +399,7 @@ bash ./nginx/setup_nginx.sh
 
 # Start a single project
 bash ./projects/portfolio/run_portfolio.sh
+bash ./projects/gps/run_gps.sh
 bash ./projects/wg-easy/run_wg.sh
 bash ./projects/image-compressor/run_image_compressor.sh
 bash ./projects/source-safe/run_source_safe.sh

@@ -1,5 +1,7 @@
 project_name path running_on_local_port
 portfolio /portfolio 8088
+gps-dashboard /gps 9100
+gps-backend /gps-backend 3100
 wg /vpn 51821
 image-compressor /image 5000
 york-certificate /york-certificate 3011

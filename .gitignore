@@ -2,5 +2,5 @@
 
 # Runtime environment files are copied from /home/admin/secrets
 .env
-projects/**/.env
+projects/**/*.env
 envs/

@@ -1,0 +1,83 @@
+version: "3.9"
+
+services:
+  backend:
+    image: registry.gitlab.com/amgad226/gps-backend/backend:dev
+    container_name: gps-backend
+    restart: always
+    ports:
+      - "127.0.0.1:3100:3000"
+      - "127.0.0.1:5220:5000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      mqtt-broker:
+        condition: service_started
+    networks:
+      - gps-network
+
+  postgres:
+    image: postgis/postgis:17-master
+    container_name: gps-postgres
+    restart: always
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5435}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gps_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gps_password}
+      POSTGRES_DB: ${POSTGRES_DB:-gps_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gps-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gps_user} -d ${POSTGRES_DB:-gps_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: gps-redis
+    restart: always
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6381}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - gps-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mqtt-broker:
+    image: emqx/emqx:latest
+    container_name: gps-mqtt-broker
+    restart: always
+    ports:
+      - "0.0.0.0:${MQTT_TCP_PORT:-1883}:1883"       # MQTT TCP
+      - "0.0.0.0:${MQTT_SSL_PORT:-8883}:8883"       # MQTT SSL (optional)
+      - "0.0.0.0:${MQTT_WS_PORT:-8083}:8083"        # WebSocket MQTT
+      - "0.0.0.0:${MQTT_WSS_PORT:-8084}:8084"       # WSS MQTT (optional)
+      - "0.0.0.0:${MQTT_DASHBOARD_PORT:-18083}:18083" # EMQX Dashboard UI
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+    networks:
+      - gps-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  emqx_data:
+  emqx_log:
+
+networks:
+  gps-network:
+    driver: bridge

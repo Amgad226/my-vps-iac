@@ -26,6 +26,7 @@ ask() {
 
 # ---------- Store decisions ----------
 RUN_PORTFOLIO=false
+RUN_GPS=false
 RUN_WG=false
 RUN_IMAGE=false
 RUN_YORK=false
@@ -40,6 +41,7 @@ echo ""
 # New global question
 if ask "Run ALL services?"; then
     RUN_PORTFOLIO=true
+    RUN_GPS=true
     RUN_WG=true
     RUN_IMAGE=true
     RUN_YORK=true
@@ -48,6 +50,7 @@ if ask "Run ALL services?"; then
     RUN_MAP_TRIPS=true
 else
     ask "Run Portfolio?" && RUN_PORTFOLIO=true
+    ask "Run GPS project (backend + dashboard)?" && RUN_GPS=true
     ask "Run WireGuard (wg-easy)?" && RUN_WG=true
     ask "Run Image Compressor?" && RUN_IMAGE=true
     ask "Run York Project?" && RUN_YORK=true
@@ -70,6 +73,7 @@ source ./install/tree.sh
 source ./install/nginx.sh
 source ./install/certbot.sh
 source ./login/ghcr.sh
+source ./login/gitlab.sh
 source ./firewall/ufw.sh
 
 setup_firewall_strict
@@ -80,6 +84,7 @@ install_tree
 install_nginx
 install_certbot
 login_to_ghcr
+login_to_gitlab
 
 bash ./login/ghcr.sh
 
@@ -94,6 +99,19 @@ open_port_if_needed 443
 if $RUN_PORTFOLIO; then
   echo "➡️ Running Portfolio"
   bash ./projects/portfolio/run_portfolio.sh
+fi
+
+if $RUN_GPS; then
+  echo "➡️ Running GPS project"
+  open_port_if_needed 9100
+  open_port_if_needed 3100
+  open_port_if_needed 5220
+  open_port_if_needed 1883
+  open_port_if_needed 8883
+  open_port_if_needed 8083
+  open_port_if_needed 8084
+  open_port_if_needed 18083
+  bash ./projects/gps/run_gps.sh
 fi
 
 if $RUN_WG; then

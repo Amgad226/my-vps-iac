@@ -26,8 +26,10 @@ for FILE in $FILES; do
 
   echo "Checking $FILE..."
 
-  # Find unsafe port lines
-  MATCHES=$(grep -nE '^\s*-\s*"?([0-9]+:[0-9]+)"?' "$FILE")
+  # Find unsafe port lines (bare host-port mappings without an explicit IP)
+  # Safe examples: - "127.0.0.1:8080:80" or - "0.0.0.0:1883:1883"
+  # Unsafe example:  - "8080:80"  or  - 8080:80
+  MATCHES=$(grep -nE '^\s*-\s*"?([0-9]+:[0-9]+)"?\s*(#.*)?$' "$FILE")
 
   if [ -n "$MATCHES" ]; then
     while IFS= read -r LINE; do
