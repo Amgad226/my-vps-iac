@@ -10,12 +10,20 @@ fi
 echo "🔍 Checking docker-compose files..."
 
 # FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E 'docker-compose.*\.ya?ml' || true)
-FILES=$(find . -type f -name "docker-compose*.yml" -o -name "docker-compose*.yaml")
+FILES=$(find . -type f \( -name "docker-compose*.yml" -o -name "docker-compose*.yaml" \))
 [ -z "$FILES" ] && exit 0
+
+# Services that intentionally bind ports on the host interface (e.g. VPN)
+EXCLUDE_PATTERNS="wg-easy"
 
 FAILED=0
 
 for FILE in $FILES; do
+  if echo "$FILE" | grep -qE "$EXCLUDE_PATTERNS"; then
+    echo "⏭ Skipping $FILE (excluded from localhost binding check)"
+    continue
+  fi
+
   echo "Checking $FILE..."
 
   # Find unsafe port lines

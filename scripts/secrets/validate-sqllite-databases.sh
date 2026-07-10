@@ -6,9 +6,12 @@
 
 
 validate_sqllite_databases() {
-  SQLITE_DATABASES_FOLDER="$(eval echo ~${SUDO_USER:-$USER})/sqlite-databases"
+  REAL_USER="${SUDO_USER:-$USER}"
+  if [ "$REAL_USER" = "root" ]; then
+    REAL_USER="admin"
+  fi
+  SQLITE_DATABASES_FOLDER="/home/$REAL_USER/sqlite-databases"
 REQUIRED_FILES=(
-  "gps.db"
   "map-trips/file.db"
 )
 

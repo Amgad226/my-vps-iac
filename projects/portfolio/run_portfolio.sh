@@ -4,8 +4,7 @@ set -e
 # Determine script directory
 # -------------------------------
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-PROJECT_ROOT="$SCRIPT_DIR"        # if docker-compose.yml is in same folder
-ENVS_DIR="$SCRIPT_DIR/../../envs" # adjust relative to script location
+PROJECT_ROOT="$SCRIPT_DIR"
 
 # -------------------------------
 # Check for docker-compose.yml
@@ -18,13 +17,19 @@ if [ ! -f "$COMPOSE_FILE" ]; then
 fi
 
 # -------------------------------
-# Copy env file
+# Copy env file from secrets
 # -------------------------------
-if [ -f "$ENVS_DIR/portfolio.env" ]; then
-    cp "$ENVS_DIR/portfolio.env" "./.env"
-    echo "✅ Copied envs to portfolio.env"
+REAL_USER="${SUDO_USER:-$USER}"
+if [ "$REAL_USER" = "root" ]; then
+  REAL_USER="admin"
+fi
+SECRETS_FOLDER="/home/$REAL_USER/secrets"
+
+if [ -f "$SECRETS_FOLDER/portfolio.env" ]; then
+    cp "$SECRETS_FOLDER/portfolio.env" "$PROJECT_ROOT/.env"
+    echo "✅ Copied $SECRETS_FOLDER/portfolio.env to $PROJECT_ROOT/.env"
 else
-    echo "❌ No env file found at $ENVS_DIR, skipping copy"
+    echo "❌ No env file found at $SECRETS_FOLDER/portfolio.env, skipping copy"
 fi
 
 chmod 777 "$PROJECT_ROOT/start.sh"

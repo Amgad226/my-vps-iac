@@ -12,8 +12,8 @@ services:
         REACT_APP_BASE_API_URL: "3000"
       # context: .
     image: amgad226/next
-  #  env_file:
-   #   - .env
+    env_file:
+      - .env
   #  environment:
       # - NODE_ENV=dev
    #   - NEXT_PUBLIC_BASE_API_URL=http://127.0.0.1:3011/

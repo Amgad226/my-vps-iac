@@ -26,7 +26,6 @@ ask() {
 
 # ---------- Store decisions ----------
 RUN_PORTFOLIO=false
-RUN_GPS=false
 RUN_WG=false
 RUN_IMAGE=false
 RUN_YORK=false
@@ -41,7 +40,6 @@ echo ""
 # New global question
 if ask "Run ALL services?"; then
     RUN_PORTFOLIO=true
-    RUN_GPS=true
     RUN_WG=true
     RUN_IMAGE=true
     RUN_YORK=true
@@ -50,7 +48,6 @@ if ask "Run ALL services?"; then
     RUN_MAP_TRIPS=true
 else
     ask "Run Portfolio?" && RUN_PORTFOLIO=true
-    ask "Run Tracking GPS Server?" && RUN_GPS=true
     ask "Run WireGuard (wg-easy)?" && RUN_WG=true
     ask "Run Image Compressor?" && RUN_IMAGE=true
     ask "Run York Project?" && RUN_YORK=true
@@ -97,12 +94,6 @@ open_port_if_needed 443
 if $RUN_PORTFOLIO; then
   echo "➡️ Running Portfolio"
   bash ./projects/portfolio/run_portfolio.sh
-fi
-
-if $RUN_GPS; then
-  echo "➡️ Running GPS Server"
-  open_port_if_needed 3000
-  bash ./projects/tracking-gps-server/run_gps.sh
 fi
 
 if $RUN_WG; then

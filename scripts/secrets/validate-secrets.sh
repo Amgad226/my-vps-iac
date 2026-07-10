@@ -7,11 +7,23 @@
 
 
 validate_secrets() {
-  SECRETS_FOLDER="$(eval echo ~${SUDO_USER:-$USER})/secrets"
+  REAL_USER="${SUDO_USER:-$USER}"
+  if [ "$REAL_USER" = "root" ]; then
+    REAL_USER="admin"
+  fi
+  SECRETS_FOLDER="/home/$REAL_USER/secrets"
 REQUIRED_FILES=(
   "PAT_SECRET"
   "source-safe.env"
   "map-trips.env"
+  "portfolio.env"
+  "image-compressor.env"
+  "wg.env"
+  "york-certificate.env"
+  "york-nest.env"
+  "york-next.env"
+  "york-staging-nest.env"
+  "york-v1.env"
 )
   echo "🔍 Checking secrets folder: $SECRETS_FOLDER"
 
