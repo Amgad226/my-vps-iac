@@ -35,8 +35,12 @@ fi
 # -------------------------------
 # Run Docker Compose
 # -------------------------------
-echo "🚀 Pulling images and starting containers..."
-docker compose -f "$COMPOSE_FILE" pull
+if [ "${SKIP_PULL:-false}" = "true" ]; then
+    echo "🚀 Starting containers without pulling..."
+else
+    echo "🚀 Pulling images and starting containers..."
+    docker compose -f "$COMPOSE_FILE" pull
+fi
 docker compose -f "$COMPOSE_FILE" up -d
 
 echo "✅ map-trips is running!"

@@ -9,20 +9,18 @@ fi
 
 echo "🚀 Starting VPS setup..."
 
-# ---------- Helper ----------
-ask() {
-  local prompt="$1"
-  local answer
-
-  read -p "$prompt [Y/n]: " answer
-
-  # Default = YES if empty (just Enter)
-  if [[ -z "$answer" || "$answer" =~ ^[Yy]$ ]]; then
-    return 0
-  else
-    return 1
-  fi
-}
+# ---------- Service registry ----------
+# Format: key|Display Name|run_script_relative_path
+declare -a SERVICES=(
+  "portfolio|Portfolio|projects/portfolio/run_portfolio.sh"
+  "gps|GPS project (backend + dashboard)|projects/gps/run_gps.sh"
+  "wg|WireGuard (wg-easy)|projects/wg-easy/run_wg.sh"
+  "image|Image Compressor|projects/image-compressor/run_image_compressor.sh"
+  "york|York Project|projects/york/run_york.sh"
+  "source_safe|Source Safe|projects/source-safe/run_source_safe.sh"
+  "map_trips|Map Trips|projects/map-trips/run_map_trips.sh"
+  "nginx|Nginx setup|nginx/setup_nginx.sh"
+)
 
 # ---------- Store decisions ----------
 RUN_PORTFOLIO=false
@@ -34,12 +32,67 @@ RUN_SOURCE_SAFE=false
 RUN_NGINX=false
 RUN_MAP_TRIPS=false
 
+# ---------- Menu helpers ----------
+show_main_menu() {
+  echo ""
+  echo "🧠 What do you want to do?"
+  echo ""
+  echo "  1) Run / update ALL services"
+  echo "  2) Update specific services (pull new images + restart selected)"
+  echo "  3) Run specific services only (start selected without pulling)"
+  echo ""
+}
+
+show_service_menu() {
+  local mode="$1"
+  echo ""
+  if [ "$mode" = "update" ]; then
+    echo "📦 Select services to UPDATE (comma or space separated numbers, e.g. 1,3,5):"
+  else
+    echo "🚀 Select services to RUN (comma or space separated numbers, e.g. 1,3,5):"
+  fi
+  echo ""
+  local i=1
+  for svc in "${SERVICES[@]}"; do
+    local name
+    name=$(echo "$svc" | cut -d'|' -f2)
+    echo "  $i) $name"
+    ((i++))
+  done
+  echo ""
+}
+
+parse_selection() {
+  local input="$1"
+  # Normalize separators: comma/space -> newline
+  echo "$input" | tr ', ' '\n' | grep -E '^[0-9]+$' | sort -u
+}
+
+set_service_flag() {
+  local key="$1"
+  case "$key" in
+    portfolio)   RUN_PORTFOLIO=true ;;
+    gps)         RUN_GPS=true ;;
+    wg)          RUN_WG=true ;;
+    image)       RUN_IMAGE=true ;;
+    york)        RUN_YORK=true ;;
+    source_safe) RUN_SOURCE_SAFE=true ;;
+    map_trips)   RUN_MAP_TRIPS=true ;;
+    nginx)       RUN_NGINX=true ;;
+  esac
+}
+
+# ---------- Interactive phase ----------
 echo ""
-echo "🧠 Configuration phase (answer all questions first)"
+echo "🧠 Configuration phase"
 echo ""
 
-# New global question
-if ask "Run ALL services?"; then
+show_main_menu
+read -p "Enter choice [1-3]: " MAIN_CHOICE
+
+case "$MAIN_CHOICE" in
+  1)
+    echo "✅ All services selected."
     RUN_PORTFOLIO=true
     RUN_GPS=true
     RUN_WG=true
@@ -48,16 +101,43 @@ if ask "Run ALL services?"; then
     RUN_SOURCE_SAFE=true
     RUN_NGINX=true
     RUN_MAP_TRIPS=true
-else
-    ask "Run Portfolio?" && RUN_PORTFOLIO=true
-    ask "Run GPS project (backend + dashboard)?" && RUN_GPS=true
-    ask "Run WireGuard (wg-easy)?" && RUN_WG=true
-    ask "Run Image Compressor?" && RUN_IMAGE=true
-    ask "Run York Project?" && RUN_YORK=true
-    ask "Run Source Safe?" && RUN_SOURCE_SAFE=true
-    ask "Run Map Trips?" && RUN_MAP_TRIPS=true
-    ask "Setup Nginx?" && RUN_NGINX=true
-fi
+    ;;
+  2)
+    show_service_menu "update"
+    read -p "Enter numbers: " SERVICE_CHOICE
+    while IFS= read -r num; do
+      [ -z "$num" ] && continue
+      idx=$((num - 1))
+      if [ "$idx" -ge 0 ] && [ "$idx" -lt "${#SERVICES[@]}" ]; then
+        key=$(echo "${SERVICES[$idx]}" | cut -d'|' -f1)
+        set_service_flag "$key"
+      else
+        echo "⚠️  Ignoring invalid choice: $num"
+      fi
+    done < <(parse_selection "$SERVICE_CHOICE")
+    export SKIP_PULL=false
+    ;;
+  3)
+    show_service_menu "run"
+    read -p "Enter numbers: " SERVICE_CHOICE
+    while IFS= read -r num; do
+      [ -z "$num" ] && continue
+      idx=$((num - 1))
+      if [ "$idx" -ge 0 ] && [ "$idx" -lt "${#SERVICES[@]}" ]; then
+        key=$(echo "${SERVICES[$idx]}" | cut -d'|' -f1)
+        set_service_flag "$key"
+      else
+        echo "⚠️  Ignoring invalid choice: $num"
+      fi
+    done < <(parse_selection "$SERVICE_CHOICE")
+    export SKIP_PULL=true
+    ;;
+  *)
+    echo "❌ Invalid choice. Exiting."
+    exit 1
+    ;;
+esac
+
 echo ""
 echo "⚙️ Installing base system..."
 echo ""

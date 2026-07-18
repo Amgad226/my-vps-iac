@@ -37,8 +37,12 @@ fi
 
 copy_env "gps-backend" "$PROJECT_ROOT/backend"
 
-echo "🚀 Pulling images and starting GPS backend..."
-docker compose -f "$BACKEND_COMPOSE_FILE" pull
+if [ "${SKIP_PULL:-false}" = "true" ]; then
+    echo "🚀 Starting GPS backend without pulling..."
+else
+    echo "🚀 Pulling images and starting GPS backend..."
+    docker compose -f "$BACKEND_COMPOSE_FILE" pull
+fi
 docker compose -f "$BACKEND_COMPOSE_FILE" up -d
 
 echo "✅ GPS backend is running!"
@@ -55,8 +59,12 @@ fi
 
 copy_env "gps-dashboard" "$PROJECT_ROOT/dashboard"
 
-echo "🚀 Pulling images and starting GPS dashboard..."
-docker compose -f "$DASHBOARD_COMPOSE_FILE" pull
+if [ "${SKIP_PULL:-false}" = "true" ]; then
+    echo "🚀 Starting GPS dashboard without pulling..."
+else
+    echo "🚀 Pulling images and starting GPS dashboard..."
+    docker compose -f "$DASHBOARD_COMPOSE_FILE" pull
+fi
 docker compose -f "$DASHBOARD_COMPOSE_FILE" up -d
 
 echo "✅ GPS dashboard is running!"

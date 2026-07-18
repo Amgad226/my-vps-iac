@@ -130,7 +130,11 @@ sudo bash ./init.sh
 
 `init.sh` execution order:
 
-1. Interactive phase — asks which services to run (or all).
+1. Interactive phase — presents a menu:
+   - **1)** Run / update **ALL** services.
+   - **2)** **Update** specific services — pulls new images and restarts only the selected services; other running services are left untouched.
+   - **3)** **Run** specific services only — starts only the selected services **without pulling** new images (uses the locally cached images).
+   - For options 2 and 3, a numbered list of services is shown and the user selects one or more services with comma or space separated numbers (e.g. `1,3,5`).
 2. `source ./scripts/secrets/validate-secrets.sh` → `validate_secrets`
 3. `source ./scripts/secrets/validate-sqllite-databases.sh` → `validate_sqllite_databases`
 4. Sources and runs installers:
@@ -338,7 +342,11 @@ Internal admin/DB ports (`5432`, `5433`, `5434`, `3307`, `6379`, `6380`, `8081`,
    bash ./projects/<project>/run_<project>.sh
    ```
 3. The script copies the env file from `/home/admin/secrets`, runs `docker compose pull`, then `docker compose up -d`.
-4. If a project port or route changed, run `bash ./nginx/setup_nginx.sh` to regenerate Nginx config and optionally request new SSL certs.
+4. All `run_*.sh` scripts honor the `SKIP_PULL=true` environment variable. When set, they skip `docker compose pull` and only run `docker compose up -d`. `init.sh` option 3 sets this automatically; you can also use it manually:
+   ```bash
+   SKIP_PULL=true bash ./projects/<project>/run_<project>.sh
+   ```
+5. If a project port or route changed, run `bash ./nginx/setup_nginx.sh` to regenerate Nginx config and optionally request new SSL certs.
 
 ### Rollback
 

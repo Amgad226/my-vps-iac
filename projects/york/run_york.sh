@@ -38,8 +38,12 @@ fi
 
 copy_env "york-v1" "$PROJECT_ROOT/docker/york_v1"
 
-echo "🚀 Pulling images and starting containers..."
-docker compose -f "$YORK_COMPOSE_FILE" pull
+if [ "${SKIP_PULL:-false}" = "true" ]; then
+    echo "🚀 Starting containers without pulling..."
+else
+    echo "🚀 Pulling images and starting containers..."
+    docker compose -f "$YORK_COMPOSE_FILE" pull
+fi
 docker compose -f "$YORK_COMPOSE_FILE" up -d
 
 echo "✅ york v1 laravel is running!"
@@ -56,8 +60,12 @@ fi
 
 copy_env "york-nest" "$PROJECT_ROOT/docker/nest"
 
-echo "🚀 Pulling images and starting containers..."
-docker compose -f "$NEST_COMPOSE_FILE" pull
+if [ "${SKIP_PULL:-false}" = "true" ]; then
+    echo "🚀 Starting containers without pulling..."
+else
+    echo "🚀 Pulling images and starting containers..."
+    docker compose -f "$NEST_COMPOSE_FILE" pull
+fi
 docker compose -f "$NEST_COMPOSE_FILE" up -d
 
 echo "✅ york nest is running!"
@@ -74,8 +82,12 @@ fi
 
 copy_env "york-certificate" "$PROJECT_ROOT/docker/certificate"
 
-echo "🚀 Pulling images and starting containers..."
-docker compose -f "$CERTIFICATE_COMPOSE_FILE" pull
+if [ "${SKIP_PULL:-false}" = "true" ]; then
+    echo "🚀 Starting containers without pulling..."
+else
+    echo "🚀 Pulling images and starting containers..."
+    docker compose -f "$CERTIFICATE_COMPOSE_FILE" pull
+fi
 docker compose -f "$CERTIFICATE_COMPOSE_FILE" up -d
 
 echo "✅ york certificate is running!"
@@ -92,8 +104,12 @@ fi
 
 copy_env "york-next" "$PROJECT_ROOT/docker/next"
 
-echo "🚀 Pulling images and starting containers..."
-docker compose -f "$NEXT_COMPOSE_FILE" pull
+if [ "${SKIP_PULL:-false}" = "true" ]; then
+    echo "🚀 Starting containers without pulling..."
+else
+    echo "🚀 Pulling images and starting containers..."
+    docker compose -f "$NEXT_COMPOSE_FILE" pull
+fi
 docker compose -f "$NEXT_COMPOSE_FILE" up -d
 
 echo "✅ york next is running!"
@@ -108,8 +124,12 @@ if [ ! -f "$GATEWAY_COMPOSE_FILE" ]; then
     exit 1
 fi
 
-echo "🚀 Pulling images and starting containers..."
-docker compose -f "$GATEWAY_COMPOSE_FILE" pull
+if [ "${SKIP_PULL:-false}" = "true" ]; then
+    echo "🚀 Starting containers without pulling..."
+else
+    echo "🚀 Pulling images and starting containers..."
+    docker compose -f "$GATEWAY_COMPOSE_FILE" pull
+fi
 docker compose -f "$GATEWAY_COMPOSE_FILE" up -d
 
 echo "✅ york gateway is running!"
