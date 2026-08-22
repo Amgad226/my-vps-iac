@@ -15,8 +15,8 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      mqtt-broker:
-        condition: service_started
+      # mqtt-broker:
+      #   condition: service_started
     networks:
       - gps-network
 
