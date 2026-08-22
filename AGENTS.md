@@ -38,7 +38,6 @@ Internet
    │      • GPS Dashboard      127.0.0.1:9100
    │      • GPS Backend API    127.0.0.1:3100
    │      • GPS Backend WS     127.0.0.1:5220
-   │      • GPS MQTT broker    0.0.0.0:1883/8883/8083/8084/18083
    │      • WireGuard UI       0.0.0.0:51821 (TCP)
    │      • WireGuard tunnel   0.0.0.0:51820 (UDP)
    │      • Image Compressor   127.0.0.1:5000
@@ -220,7 +219,7 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 - **Backend image:** `registry.gitlab.com/amgad226/gps-backend/backend:dev`
   - Container: `gps-backend`
   - Public ports: `127.0.0.1:3100` (API), `127.0.0.1:5220` (WS)
-  - Internal services: PostGIS on `127.0.0.1:5435`, Redis on `127.0.0.1:6381`, EMQX MQTT broker on host ports `1883/8883/8083/8084/18083`
+  - Internal services: PostGIS on `127.0.0.1:5435`, Redis on `127.0.0.1:6381`
 - **Dashboard image:** `registry.gitlab.com/amgad226/manage-fleet-pro/dashboard:dev`
   - Container: `gps-dashboard`
   - Public port: `127.0.0.1:9100`
@@ -285,11 +284,6 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 | 3100 | TCP | GPS Backend API | If GPS selected |
 | 5220 | TCP | GPS Backend WS | If GPS selected |
 | 9100 | TCP | GPS Dashboard | If GPS selected |
-| 1883 | TCP | GPS MQTT (TCP) | If GPS selected |
-| 8883 | TCP | GPS MQTT (SSL) | If GPS selected |
-| 8083 | TCP | GPS MQTT (WS) | If GPS selected |
-| 8084 | TCP | GPS MQTT (WSS) | If GPS selected |
-| 18083 | TCP | GPS MQTT Dashboard | If GPS selected |
 | 51820 | UDP | WireGuard tunnel | If wg selected |
 | 51821 | TCP | WireGuard web UI | If wg selected |
 | 3011 | TCP | York Certificate | If york selected |

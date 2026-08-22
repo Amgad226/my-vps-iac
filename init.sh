@@ -186,11 +186,6 @@ if $RUN_GPS; then
   open_port_if_needed 9100
   open_port_if_needed 3100
   open_port_if_needed 5220
-  open_port_if_needed 1883
-  open_port_if_needed 8883
-  open_port_if_needed 8083
-  open_port_if_needed 8084
-  open_port_if_needed 18083
   bash ./projects/gps/run_gps.sh
 fi
 
