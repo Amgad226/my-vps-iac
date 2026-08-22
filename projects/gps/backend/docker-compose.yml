@@ -56,27 +56,27 @@ services:
       timeout: 5s
       retries: 5
 
-  mqtt-broker:
-    image: emqx/emqx:latest
-    container_name: gps-mqtt-broker
-    restart: always
-    ports:
-      - "0.0.0.0:${MQTT_TCP_PORT:-1883}:1883"       # MQTT TCP
-      - "0.0.0.0:${MQTT_SSL_PORT:-8883}:8883"       # MQTT SSL (optional)
-      - "0.0.0.0:${MQTT_WS_PORT:-8083}:8083"        # WebSocket MQTT
-      - "0.0.0.0:${MQTT_WSS_PORT:-8084}:8084"       # WSS MQTT (optional)
-      - "0.0.0.0:${MQTT_DASHBOARD_PORT:-18083}:18083" # EMQX Dashboard UI
-    volumes:
-      - emqx_data:/opt/emqx/data
-      - emqx_log:/opt/emqx/log
-    networks:
-      - gps-network
+  # mqtt-broker:
+  #   image: emqx/emqx:latest
+  #   container_name: gps-mqtt-broker
+  #   restart: always
+  #   ports:
+  #     - "0.0.0.0:${MQTT_TCP_PORT:-1883}:1883"       # MQTT TCP
+  #     - "0.0.0.0:${MQTT_SSL_PORT:-8883}:8883"       # MQTT SSL (optional)
+  #     - "0.0.0.0:${MQTT_WS_PORT:-8083}:8083"        # WebSocket MQTT
+  #     - "0.0.0.0:${MQTT_WSS_PORT:-8084}:8084"       # WSS MQTT (optional)
+  #     - "0.0.0.0:${MQTT_DASHBOARD_PORT:-18083}:18083" # EMQX Dashboard UI
+  #   volumes:
+  #     - emqx_data:/opt/emqx/data
+  #     - emqx_log:/opt/emqx/log
+  #   networks:
+  #     - gps-network
 
 volumes:
   postgres_data:
   redis_data:
-  emqx_data:
-  emqx_log:
+  # emqx_data:
+  # emqx_log:
 
 networks:
   gps-network:
