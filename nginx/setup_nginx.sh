@@ -5,6 +5,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 PROJECTS_FILE="$SCRIPT_DIR/config/projects.env"
+CUSTOM_DOMAINS_FILE="$SCRIPT_DIR/config/custom-domains.env"
 WEB_SRC_DIR="$SCRIPT_DIR/web"
 WEB_ROOT="/var/www/vps-projects"
 
@@ -31,6 +32,11 @@ fi
 
 if [ ! -f "$PROJECTS_FILE" ]; then
   echo "❌ Projects file not found: $PROJECTS_FILE"
+  exit 1
+fi
+
+if [ ! -f "$CUSTOM_DOMAINS_FILE" ]; then
+  echo "❌ Custom domains file not found: $CUSTOM_DOMAINS_FILE"
   exit 1
 fi
 
@@ -77,7 +83,9 @@ server {
 
 EOF
 
-DOMAINS=("$BASE_DOMAIN")
+BASE_CERT_DOMAINS=("$BASE_DOMAIN")
+declare -a CUSTOM_CERT_NAMES=()
+declare -A CUSTOM_CERT_DOMAINS=()
 
 while IFS="|" read -r name path port flags; do
   name="${name#"${name%%[![:space:]]*}"}"
@@ -136,7 +144,7 @@ $EXTRA_CONF
 
 EOF
 
-  DOMAINS+=("$name.$BASE_DOMAIN")
+  BASE_CERT_DOMAINS+=("$name.$BASE_DOMAIN")
 done < "$PROJECTS_FILE"
 
 echo "}" >> "$TMP_CONF"
@@ -199,6 +207,78 @@ $EXTRA_CONF
 }
 EOF
 done < "$PROJECTS_FILE"
+
+# --- Custom domain server blocks ---
+while IFS="|" read -r domain port cert_name flags; do
+  domain="${domain#"${domain%%[![:space:]]*}"}"
+  domain="${domain%"${domain##*[![:space:]]}"}"
+  port="${port#"${port%%[![:space:]]*}"}"
+  port="${port%"${port##*[![:space:]]}"}"
+  cert_name="${cert_name#"${cert_name%%[![:space:]]*}"}"
+  cert_name="${cert_name%"${cert_name##*[![:space:]]}"}"
+  flags="${flags#"${flags%%[![:space:]]*}"}"
+  flags="${flags%"${flags##*[![:space:]]}"}"
+
+  if [ -z "$domain" ] || [[ "$domain" == \#* ]]; then
+    continue
+  fi
+
+  if [[ ! "$domain" =~ ^[A-Za-z0-9.-]+$ ]] || [[ ! "$port" =~ ^[0-9]+$ ]]; then
+    echo "⚠️  Skipping invalid custom domain line: domain='$domain' port='$port'"
+    continue
+  fi
+
+  if [ -z "$cert_name" ]; then
+    cert_name="$domain"
+  fi
+
+  if [[ ! "$cert_name" =~ ^[A-Za-z0-9.-]+$ ]]; then
+    echo "⚠️  Skipping custom domain with invalid certificate name: $cert_name"
+    continue
+  fi
+
+  echo "🌐 Adding custom domain $domain → $port"
+
+  EXTRA_CONF=""
+  if [[ "$flags" == *"large"* ]]; then
+    EXTRA_CONF="        client_max_body_size 1G;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_request_buffering off;"
+  fi
+
+  cat >> "$TMP_CONF" <<EOF
+
+# Custom domain: $domain
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $domain;
+
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_redirect off;
+$EXTRA_CONF
+        proxy_pass http://127.0.0.1:$port/;
+    }
+}
+EOF
+
+  if [ -z "${CUSTOM_CERT_DOMAINS[$cert_name]+x}" ]; then
+    CUSTOM_CERT_NAMES+=("$cert_name")
+    CUSTOM_CERT_DOMAINS["$cert_name"]="$domain"
+  else
+    CUSTOM_CERT_DOMAINS["$cert_name"]+=" $domain"
+  fi
+done < "$CUSTOM_DOMAINS_FILE"
 
 mv "$TMP_CONF" "$OUT_CONF"
 chmod 0644 "$OUT_CONF"
@@ -314,6 +394,31 @@ while IFS="|" read -r name path port flags; do
 EOF
 done < "$PROJECTS_FILE"
 
+while IFS="|" read -r domain port cert_name flags; do
+  domain="${domain#"${domain%%[![:space:]]*}"}"
+  domain="${domain%"${domain##*[![:space:]]}"}"
+  port="${port#"${port%%[![:space:]]*}"}"
+  port="${port%"${port##*[![:space:]]}"}"
+
+  if [ -z "$domain" ] || [[ "$domain" == \#* ]]; then
+    continue
+  fi
+
+  if [[ ! "$domain" =~ ^[A-Za-z0-9.-]+$ ]] || [[ ! "$port" =~ ^[0-9]+$ ]]; then
+    continue
+  fi
+
+  cat >> "$DASHBOARD_TMP" <<EOF
+        <div class="card">
+          <span class="badge">custom domain</span>
+          <h2>$domain</h2>
+          <div class="links">
+            <a target="_blank" href="https://$domain">Open →</a>
+          </div>
+        </div>
+EOF
+done < "$CUSTOM_DOMAINS_FILE"
+
 cat >> "$DASHBOARD_TMP" <<'HTMLFOOT'
       </div>
     </div>
@@ -388,6 +493,89 @@ $SUDO systemctl restart nginx
 # ==============================================================================
 # 4. Certbot SSL
 # ==============================================================================
+print_certbot_command() {
+  local cert_name="$1"
+  shift
+
+  printf "     sudo certbot --nginx --cert-name %s" "$cert_name"
+  for domain in "$@"; do
+    printf " -d %s" "$domain"
+  done
+  printf "\n"
+}
+
+normalize_domains() {
+  printf '%s\n' "$@" | sort -u | paste -sd ' ' -
+}
+
+get_certificate_domains() {
+  local cert_name="$1"
+
+  $SUDO certbot certificates 2>/dev/null | awk -v cert_name="$cert_name" '
+    {
+      line = $0
+      sub(/^[[:space:]]*/, "", line)
+    }
+    line == "Certificate Name: " cert_name {
+      in_certificate = 1
+      next
+    }
+    in_certificate && line ~ /^Domains:/ {
+      sub(/^Domains:[[:space:]]*/, "", line)
+      print line
+      exit
+    }
+  '
+}
+
+ensure_certificate() {
+  local cert_name="$1"
+  shift
+  local domains=("$@")
+  local certbot_args=(
+    --nginx
+    --non-interactive
+    --agree-tos
+    --email "$CERTBOT_EMAIL"
+    --cert-name "$cert_name"
+  )
+
+  for domain in "${domains[@]}"; do
+    certbot_args+=(-d "$domain")
+  done
+
+  local current_domains
+  current_domains="$(get_certificate_domains "$cert_name")"
+
+  if [ -n "$current_domains" ]; then
+    local current_domain_list=()
+    read -r -a current_domain_list <<< "$current_domains"
+
+    if [ "$(normalize_domains "${current_domain_list[@]}")" = "$(normalize_domains "${domains[@]}")" ]; then
+      echo "🔒 Re-installing certificate '$cert_name' into Nginx..."
+      $SUDO certbot "${certbot_args[@]}" --reinstall
+    else
+      echo "🔒 Updating certificate '$cert_name' for: ${domains[*]}"
+      $SUDO certbot "${certbot_args[@]}"
+    fi
+  else
+    echo "🔒 Obtaining certificate '$cert_name' for: ${domains[*]}"
+    $SUDO certbot "${certbot_args[@]}"
+  fi
+
+  local installed_domains
+  local installed_domain_list=()
+  installed_domains="$(get_certificate_domains "$cert_name")"
+  read -r -a installed_domain_list <<< "$installed_domains"
+
+  if [ "$(normalize_domains "${installed_domain_list[@]}")" != "$(normalize_domains "${domains[@]}")" ]; then
+    echo "❌ Certificate '$cert_name' does not contain the expected domains: ${domains[*]}"
+    return 1
+  fi
+
+  echo "✅ Certificate '$cert_name' is installed for: ${domains[*]}"
+}
+
 if command -v certbot &> /dev/null; then
   echo "🔒 Certbot detected."
 
@@ -396,31 +584,37 @@ if command -v certbot &> /dev/null; then
     echo "⚠️  To automatically obtain SSL certificates, set CERTBOT_EMAIL:"
     echo "     CERTBOT_EMAIL=your-email@example.com $0"
     echo ""
-    echo "   Or run certbot manually:"
-    CERTBOT_CMD="sudo certbot --nginx"
-    for domain in "${DOMAINS[@]}"; do
-      CERTBOT_CMD="$CERTBOT_CMD -d $domain"
+    echo "   Or run Certbot manually:"
+    print_certbot_command "$BASE_DOMAIN" "${BASE_CERT_DOMAINS[@]}"
+    for cert_name in "${CUSTOM_CERT_NAMES[@]}"; do
+      read -r -a custom_domains <<< "${CUSTOM_CERT_DOMAINS[$cert_name]}"
+      print_certbot_command "$cert_name" "${custom_domains[@]}"
     done
-    echo "     $CERTBOT_CMD"
     echo ""
   else
-    CERT_NAME="$BASE_DOMAIN"
-    CERTBOT_ARGS="--nginx --non-interactive --agree-tos --email $CERTBOT_EMAIL --cert-name $CERT_NAME"
-    for domain in "${DOMAINS[@]}"; do
-      CERTBOT_ARGS="$CERTBOT_ARGS -d $domain"
+    CERTBOT_FAILED=false
+
+    ensure_certificate "$BASE_DOMAIN" "${BASE_CERT_DOMAINS[@]}" || {
+      echo "⚠️  Certbot failed for '$BASE_DOMAIN'. Ensure all DNS A records point to this server."
+      CERTBOT_FAILED=true
+    }
+
+    for cert_name in "${CUSTOM_CERT_NAMES[@]}"; do
+      read -r -a custom_domains <<< "${CUSTOM_CERT_DOMAINS[$cert_name]}"
+      ensure_certificate "$cert_name" "${custom_domains[@]}" || {
+        echo "⚠️  Certbot failed for '$cert_name'. Ensure all DNS A records point to this server."
+        CERTBOT_FAILED=true
+      }
     done
 
-    if $SUDO certbot certificates 2>/dev/null | grep -q "Name: $CERT_NAME"; then
-      echo "🔒 Re-installing existing certificate into Nginx..."
-      $SUDO certbot $CERTBOT_ARGS --reinstall || {
-        echo "⚠️  Certbot reinstall failed. You may need to run it manually."
-      }
-    else
-      echo "🔒 Obtaining new SSL certificate for: ${DOMAINS[*]}"
-      $SUDO certbot $CERTBOT_ARGS || {
-        echo "⚠️  Certbot failed. Ensure DNS A records point to this server."
-      }
+    if $CERTBOT_FAILED; then
+      echo "❌ One or more SSL certificates could not be installed."
+      exit 1
     fi
+
+    echo "🔍 Verifying Nginx after SSL installation..."
+    $SUDO nginx -t
+    $SUDO systemctl reload nginx
   fi
 else
   echo ""
@@ -428,11 +622,11 @@ else
   echo "     sudo apt update && sudo apt install certbot python3-certbot-nginx"
   echo ""
   echo "   Then run:"
-  CERTBOT_CMD="sudo certbot --nginx"
-  for domain in "${DOMAINS[@]}"; do
-    CERTBOT_CMD="$CERTBOT_CMD -d $domain"
+  print_certbot_command "$BASE_DOMAIN" "${BASE_CERT_DOMAINS[@]}"
+  for cert_name in "${CUSTOM_CERT_NAMES[@]}"; do
+    read -r -a custom_domains <<< "${CUSTOM_CERT_DOMAINS[$cert_name]}"
+    print_certbot_command "$cert_name" "${custom_domains[@]}"
   done
-  echo "     $CERTBOT_CMD"
   echo ""
 fi
 

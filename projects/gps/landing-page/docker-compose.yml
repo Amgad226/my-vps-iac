@@ -1,0 +1,9 @@
+services:
+  gps-landing-page:
+    image: nginx:alpine
+    container_name: gps-landing-page
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9300:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro

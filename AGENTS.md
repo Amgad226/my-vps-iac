@@ -30,6 +30,8 @@ Internet
 │  • Listens on 80/443                        │
 │  • Path-based routes: /portfolio, /vpn, ... │
 │  • Subdomain routes: *.amjad.cloud          │
+│  • Custom domains: weenha.com                │
+│                    app.weenha.com            │
 │  • Static dashboard at /var/www/vps-projects│
 └─────────────────────────────────────────────┘
    │
@@ -39,6 +41,7 @@ Internet
    │      • GPS Backend API    127.0.0.1:3100
    │      • GPS Backend WS     127.0.0.1:5220
    │      • GPS Mobile         127.0.0.1:9200
+   │      • GPS Landing Page   127.0.0.1:9300
    │      • WireGuard UI       0.0.0.0:51821 (TCP)
    │      • WireGuard tunnel   0.0.0.0:51820 (UDP)
    │      • Image Compressor   127.0.0.1:5000
@@ -64,7 +67,7 @@ Internet
   - GitHub Container Registry (`ghcr.io`) for GHCR-hosted container images.
   - GitLab Container Registry (`registry.gitlab.com`) for GPS container images.
   - Let's Encrypt/Certbot for SSL certificates.
-  - DNS A records for `amjad.cloud` and `*.{project}.amjad.cloud` must point to the VPS IP.
+  - DNS A records for `amjad.cloud`, its project subdomains, `weenha.com`, and `app.weenha.com` must point to the VPS IP.
 
 ---
 
@@ -85,11 +88,12 @@ Internet
 | `nginx/setup_nginx.sh` | Generates Nginx config (`nginx/projects.conf`), deploys it to `/etc/nginx/sites-available/vps-projects`, syncs dashboard HTML to `/var/www/vps-projects`, disables competing default servers, reloads Nginx, and runs Certbot. |
 | `nginx/s.sh` | **Interactive helper** to create an extra Nginx site from stubs (not used by automation). |
 | `nginx/config/projects.env` | Source of truth for project name → path → port mapping used by `setup_nginx.sh`. Format: `name|path|port|flags`. |
+| `nginx/config/custom-domains.env` | Source of truth for domains outside `BASE_DOMAIN`. Format: `domain|port|certificate-name|flags`; domains with the same certificate name share a SAN certificate. |
 | `nginx/web/index.html` | Static fallback dashboard (manually edited; `setup_nginx.sh` also auto-generates a dynamic version). |
 | `secrets/` | **Sensitive files.** Contains `PAT_SECRET` and all `<project>.env` files. This directory is gitignored and must be placed on the VPS at `/home/admin/secrets` (and at `~/secrets` for validation). |
 | `scripts/secrets/validate-secrets.sh` | Validates that `/home/admin/secrets` contains every secret env file and registry token used by the projects. |
 | `scripts/secrets/validate-sqllite-databases.sh` | Validates `~/sqlite-databases/map-trips/file.db` and sets `chmod 777`. |
-| `projects/` | One directory per service. Each contains a `docker-compose.yml` and a `run_*.sh` wrapper that copies its env from `/home/admin/secrets`. `projects/gps` has separate `backend/` (API + Postgres + Redis), `dashboard/`, and `mobile/` directories. |
+| `projects/` | One directory per service. Each contains a `docker-compose.yml` and a `run_*.sh` wrapper that copies its env from `/home/admin/secrets`. `projects/gps` has separate `backend/` (API + Postgres + Redis), `dashboard/`, `mobile/`, and `landing-page/` directories. |
 | `hooks/pre-commit` | Git hook that blocks `docker-compose*.yml` port lines not bound to `127.0.0.1`. `projects/wg-easy/docker-compose.yml` is excluded because WireGuard must bind to the host interface. Pass `--fix` to auto-correct. |
 
 ### Script categories
@@ -121,7 +125,7 @@ Internet
    - York envs: `york-certificate.env`, `york-nest.env`, `york-next.env`, `york-staging-nest.env`, `york-v1.env`
 2. Create `/home/admin/sqlite-databases/` and provide:
    - `map-trips/file.db`
-3. Ensure DNS A records exist for `amjad.cloud` and `*.{project}.amjad.cloud`.
+3. Ensure DNS A records exist for `amjad.cloud`, its project subdomains, `weenha.com`, and `app.weenha.com`.
 
 ### Run provisioning
 
@@ -217,7 +221,7 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 - **Deps:** SQLite database mounted from `./database.sqlite`; `start.sh` runs migrations/config cache inside the container.
 
 ### GPS Project (`projects/gps/`)
-- **Purpose:** GPS backend API + dashboard + mobile web app.
+- **Purpose:** GPS backend API + dashboard + mobile web app + Weenha landing page.
 - **Backend image:** `registry.gitlab.com/amgad226/gps-backend/backend:dev`
   - Container: `gps-backend`
   - Public ports: `127.0.0.1:3100` (API), `127.0.0.1:5220` (WS)
@@ -228,11 +232,16 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 - **Mobile image:** `registry.gitlab.com/amgad226/gps-mobile/mobile:master`
   - Container: `gps-mobile`
   - Private host port: `127.0.0.1:9200` (container port `80`)
+- **Landing Page image:** `nginx:alpine`
+  - Container: `gps-landing-page`
+  - Static file: `projects/gps/landing-page/index.html`
+  - Private host port: `127.0.0.1:9300` (container port `80`)
 - **Run:** `bash ./projects/gps/run_gps.sh`
 - **Routes:**
   - Dashboard: `https://amjad.cloud/gps` and `https://gps-dashboard.amjad.cloud`
   - Backend: `https://amjad.cloud/gps-backend` and `https://gps-backend.amjad.cloud`
-  - Mobile: `https://amjad.cloud/gps-mobile` and `https://app-gps.amjad.cloud`
+  - Mobile: `https://amjad.cloud/gps-mobile`, `https://app-gps.amjad.cloud`, and `https://app.weenha.com`
+  - Landing Page: `https://weenha.com`
 - **Deps:** `gps-backend.env` and `gps-dashboard.env` copied from `/home/admin/secrets`.
 
 ### WireGuard / wg-easy (`projects/wg-easy/`)
@@ -300,7 +309,7 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 
 Internal admin/DB ports (`5432`, `5433`, `5434`, `3307`, `6379`, `6380`, `8081`, `8888`, `8090`) are bound to `127.0.0.1` and **not** opened in UFW.
 
-GPS Mobile port `9200` is also bound to `127.0.0.1` and is available publicly only through Nginx at `app-gps.amjad.cloud` (or the `/gps-mobile` base-domain path).
+GPS Mobile port `9200` and GPS Landing Page port `9300` are bound to `127.0.0.1`. They are available publicly only through Nginx: the mobile app at `app-gps.amjad.cloud`, `/gps-mobile`, and `app.weenha.com`; the landing page at `weenha.com`.
 
 ### Firewall
 
@@ -313,15 +322,16 @@ GPS Mobile port `9200` is also bound to `127.0.0.1` and is available publicly on
 - Generated config: `/etc/nginx/sites-available/vps-projects` → `sites-enabled/vps-projects`.
 - Path-based routes on `amjad.cloud` and direct IP.
 - Subdomain routes on `{project}.amjad.cloud`.
+- Custom-domain routes are generated from `nginx/config/custom-domains.env`.
 - WebSocket headers included.
 - `image-compressor` and `map-trips` have `large` flag → 1 GB upload + 300 s timeouts.
 
 ### SSL/TLS
 
 - Certbot email hardcoded in `nginx/setup_nginx.sh`: `amgad.wr.1@gmail.com`.
-- Cert-name: `$BASE_DOMAIN`.
-- Domains include `$BASE_DOMAIN` plus every `{project}.$BASE_DOMAIN` from `nginx/config/projects.env`.
-- `setup_nginx.sh` reinstalls existing certs or requests new ones.
+- Base cert-name: `$BASE_DOMAIN`; it includes `$BASE_DOMAIN` plus every `{project}.$BASE_DOMAIN` from `nginx/config/projects.env`.
+- Custom certificate groups are defined in `nginx/config/custom-domains.env`. The `weenha.com` certificate includes both `weenha.com` and `app.weenha.com`.
+- `setup_nginx.sh` requests missing certificates, updates certificates when their domain list changes, reinstalls unchanged certificates into the regenerated Nginx config, verifies their SAN domain lists, and exits non-zero if installation fails.
 - York gateway SSL config (`nginx-ssl.conf`) references `/etc/letsencrypt/live/amjad.cloud-0001/` — ensure this cert name/path matches what Certbot created.
 
 ### SSH
@@ -348,7 +358,7 @@ GPS Mobile port `9200` is also bound to `127.0.0.1` and is available publicly on
    ```bash
    SKIP_PULL=true bash ./projects/<project>/run_<project>.sh
    ```
-5. If a project port or route changed, run `bash ./nginx/setup_nginx.sh` to regenerate Nginx config and optionally request new SSL certs.
+5. If a project port, route, or custom domain changed, run `bash ./nginx/setup_nginx.sh` to regenerate Nginx config and install/update the required SSL certificates.
 
 ### Rollback
 

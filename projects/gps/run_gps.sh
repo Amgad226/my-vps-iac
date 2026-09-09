@@ -88,3 +88,23 @@ fi
 docker compose -f "$MOBILE_COMPOSE_FILE" up -d
 
 echo "✅ GPS mobile is running!"
+
+# -------------------------------
+# GPS Landing Page
+# -------------------------------
+LANDING_PAGE_COMPOSE_FILE="$PROJECT_ROOT/landing-page/docker-compose.yml"
+
+if [ ! -f "$LANDING_PAGE_COMPOSE_FILE" ]; then
+    echo "❌ docker-compose.yml not found at $LANDING_PAGE_COMPOSE_FILE"
+    exit 1
+fi
+
+if [ "${SKIP_PULL:-false}" = "true" ]; then
+    echo "🚀 Starting GPS landing page without pulling..."
+else
+    echo "🚀 Pulling image and starting GPS landing page..."
+    docker compose -f "$LANDING_PAGE_COMPOSE_FILE" pull
+fi
+docker compose -f "$LANDING_PAGE_COMPOSE_FILE" up -d
+
+echo "✅ GPS landing page is running!"
