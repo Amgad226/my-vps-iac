@@ -9,8 +9,8 @@
 This repository is **Infrastructure as Code (IaC)** for provisioning and managing a single VPS that hosts multiple personal projects behind a shared Nginx reverse proxy.
 
 - **Primary domain:** `amjad.cloud` (override with `BASE_DOMAIN` env var in `nginx/setup_nginx.sh`)
-- **Main technologies:** Bash, Docker + Docker Compose, Nginx, UFW, Certbot, GitHub Container Registry (GHCR), WireGuard (wg-easy), SQLite, PostgreSQL, MySQL, Redis
-- **Deployment model:** Each project is a Docker Compose service; images are pulled from `ghcr.io/amgad226/*` (and `ghcr.io/wg-easy/wg-easy`).
+- **Main technologies:** Bash, Docker + Docker Compose, Nginx, UFW, Certbot, GitHub Container Registry (GHCR), GitLab Container Registry, WireGuard (wg-easy), SQLite, PostgreSQL, MySQL, Redis
+- **Deployment model:** Each project is a Docker Compose service; images are pulled from GHCR and the GitLab Container Registry (plus `ghcr.io/wg-easy/wg-easy`).
 
 ---
 
@@ -38,6 +38,7 @@ Internet
    │      • GPS Dashboard      127.0.0.1:9100
    │      • GPS Backend API    127.0.0.1:3100
    │      • GPS Backend WS     127.0.0.1:5220
+   │      • GPS Mobile         127.0.0.1:9200
    │      • WireGuard UI       0.0.0.0:51821 (TCP)
    │      • WireGuard tunnel   0.0.0.0:51820 (UDP)
    │      • Image Compressor   127.0.0.1:5000
@@ -60,7 +61,8 @@ Internet
 ```
 
 - **External dependencies:**
-  - GitHub Container Registry (`ghcr.io`) for all container images.
+  - GitHub Container Registry (`ghcr.io`) for GHCR-hosted container images.
+  - GitLab Container Registry (`registry.gitlab.com`) for GPS container images.
   - Let's Encrypt/Certbot for SSL certificates.
   - DNS A records for `amjad.cloud` and `*.{project}.amjad.cloud` must point to the VPS IP.
 
@@ -87,7 +89,7 @@ Internet
 | `secrets/` | **Sensitive files.** Contains `PAT_SECRET` and all `<project>.env` files. This directory is gitignored and must be placed on the VPS at `/home/admin/secrets` (and at `~/secrets` for validation). |
 | `scripts/secrets/validate-secrets.sh` | Validates that `/home/admin/secrets` contains every secret env file and registry token used by the projects. |
 | `scripts/secrets/validate-sqllite-databases.sh` | Validates `~/sqlite-databases/map-trips/file.db` and sets `chmod 777`. |
-| `projects/` | One directory per service. Each contains a `docker-compose.yml` and a `run_*.sh` wrapper that copies its env from `/home/admin/secrets`. `projects/gps` has separate `backend/` (API + Postgres + Redis + MQTT) and `dashboard/` directories. |
+| `projects/` | One directory per service. Each contains a `docker-compose.yml` and a `run_*.sh` wrapper that copies its env from `/home/admin/secrets`. `projects/gps` has separate `backend/` (API + Postgres + Redis), `dashboard/`, and `mobile/` directories. |
 | `hooks/pre-commit` | Git hook that blocks `docker-compose*.yml` port lines not bound to `127.0.0.1`. `projects/wg-easy/docker-compose.yml` is excluded because WireGuard must bind to the host interface. Pass `--fix` to auto-correct. |
 
 ### Script categories
@@ -215,7 +217,7 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 - **Deps:** SQLite database mounted from `./database.sqlite`; `start.sh` runs migrations/config cache inside the container.
 
 ### GPS Project (`projects/gps/`)
-- **Purpose:** GPS backend API + dashboard.
+- **Purpose:** GPS backend API + dashboard + mobile web app.
 - **Backend image:** `registry.gitlab.com/amgad226/gps-backend/backend:dev`
   - Container: `gps-backend`
   - Public ports: `127.0.0.1:3100` (API), `127.0.0.1:5220` (WS)
@@ -223,10 +225,14 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 - **Dashboard image:** `registry.gitlab.com/amgad226/manage-fleet-pro/dashboard:dev`
   - Container: `gps-dashboard`
   - Public port: `127.0.0.1:9100`
+- **Mobile image:** `registry.gitlab.com/amgad226/gps-mobile/mobile:master`
+  - Container: `gps-mobile`
+  - Private host port: `127.0.0.1:9200` (container port `80`)
 - **Run:** `bash ./projects/gps/run_gps.sh`
 - **Routes:**
   - Dashboard: `https://amjad.cloud/gps` and `https://gps-dashboard.amjad.cloud`
   - Backend: `https://amjad.cloud/gps-backend` and `https://gps-backend.amjad.cloud`
+  - Mobile: `https://amjad.cloud/gps-mobile` and `https://app-gps.amjad.cloud`
 - **Deps:** `gps-backend.env` and `gps-dashboard.env` copied from `/home/admin/secrets`.
 
 ### WireGuard / wg-easy (`projects/wg-easy/`)
@@ -294,6 +300,8 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 
 Internal admin/DB ports (`5432`, `5433`, `5434`, `3307`, `6379`, `6380`, `8081`, `8888`, `8090`) are bound to `127.0.0.1` and **not** opened in UFW.
 
+GPS Mobile port `9200` is also bound to `127.0.0.1` and is available publicly only through Nginx at `app-gps.amjad.cloud` (or the `/gps-mobile` base-domain path).
+
 ### Firewall
 
 - Script: `firewall/ufw.sh`
@@ -330,7 +338,7 @@ Internal admin/DB ports (`5432`, `5433`, `5434`, `3307`, `6379`, `6380`, `8081`,
 
 ## 8. Deployment Process
 
-1. Push new image to GHCR from the corresponding application repository.
+1. Push a new image to the registry used by the application (GHCR or the GitLab Container Registry).
 2. On the VPS, run the relevant project `run_*.sh`:
    ```bash
    bash ./projects/<project>/run_<project>.sh

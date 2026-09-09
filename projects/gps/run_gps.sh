@@ -68,3 +68,23 @@ fi
 docker compose -f "$DASHBOARD_COMPOSE_FILE" up -d
 
 echo "✅ GPS dashboard is running!"
+
+# -------------------------------
+# GPS Mobile
+# -------------------------------
+MOBILE_COMPOSE_FILE="$PROJECT_ROOT/mobile/docker-compose.yml"
+
+if [ ! -f "$MOBILE_COMPOSE_FILE" ]; then
+    echo "❌ docker-compose.yml not found at $MOBILE_COMPOSE_FILE"
+    exit 1
+fi
+
+if [ "${SKIP_PULL:-false}" = "true" ]; then
+    echo "🚀 Starting GPS mobile without pulling..."
+else
+    echo "🚀 Pulling image and starting GPS mobile..."
+    docker compose -f "$MOBILE_COMPOSE_FILE" pull
+fi
+docker compose -f "$MOBILE_COMPOSE_FILE" up -d
+
+echo "✅ GPS mobile is running!"

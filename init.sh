@@ -13,7 +13,7 @@ echo "🚀 Starting VPS setup..."
 # Format: key|Display Name|run_script_relative_path
 declare -a SERVICES=(
   "portfolio|Portfolio|projects/portfolio/run_portfolio.sh"
-  "gps|GPS project (backend + dashboard)|projects/gps/run_gps.sh"
+  "gps|GPS project (backend + dashboard + mobile)|projects/gps/run_gps.sh"
   "wg|WireGuard (wg-easy)|projects/wg-easy/run_wg.sh"
   "image|Image Compressor|projects/image-compressor/run_image_compressor.sh"
   "york|York Project|projects/york/run_york.sh"

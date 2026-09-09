@@ -1,0 +1,7 @@
+services:
+  gps-mobile:
+    image: registry.gitlab.com/amgad226/gps-mobile/mobile:master
+    container_name: gps-mobile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9200:80"
