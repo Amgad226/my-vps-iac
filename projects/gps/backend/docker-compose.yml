@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   backend:
-    image: registry.gitlab.com/amgad226/gps-backend/backend:dev
+    image: registry.gitlab.com/amgad226/gps-backend/backend:main
     container_name: gps-backend
     restart: always
     ports:

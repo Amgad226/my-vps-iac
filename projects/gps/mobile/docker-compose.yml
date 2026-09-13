@@ -1,6 +1,6 @@
 services:
   gps-mobile:
-    image: registry.gitlab.com/amgad226/gps-mobile/mobile:master
+    image: registry.gitlab.com/amgad226/gps-mobile/mobile:main
     container_name: gps-mobile
     restart: unless-stopped
     ports:
