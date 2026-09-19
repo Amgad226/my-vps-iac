@@ -5,56 +5,85 @@ services:
     image: registry.gitlab.com/amgad226/gps-backend/backend:main
     container_name: gps-backend
     restart: always
+
     ports:
       - "0.0.0.0:3100:3000"
       - "0.0.0.0:5220:5000"
+
     env_file:
       - .env
+
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+
+    cpus: 3.0
+    mem_limit: 3g
+    mem_reservation: 1g
 
     networks:
       - gps-network
+
 
   postgres:
     image: postgis/postgis:17-master
     container_name: gps-postgres
     restart: always
+
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5435}:5432"
+
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-gps_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gps_password}
       POSTGRES_DB: ${POSTGRES_DB:-gps_db}
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+    cpus: 3.0
+    mem_limit: 3g
+    mem_reservation: 1500m
+
     networks:
       - gps-network
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gps_user} -d ${POSTGRES_DB:-gps_db}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-gps_user} -d ${POSTGRES_DB:-gps_db}"
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
+
 
   redis:
     image: redis:7-alpine
     container_name: gps-redis
     restart: always
+
     ports:
       - "127.0.0.1:${REDIS_PORT:-6381}:6379"
+
     volumes:
       - redis_data:/data
+
+    cpus: 1.0
+    mem_limit: 512m
+    mem_reservation: 128m
+
     networks:
       - gps-network
+
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-
 
 
 volumes:
