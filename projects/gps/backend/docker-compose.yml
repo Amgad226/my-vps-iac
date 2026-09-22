@@ -26,6 +26,36 @@ services:
     networks:
       - gps-network
 
+  demo-simulator:
+    image: registry.gitlab.com/amgad226/gps-backend/backend:main
+    container_name: gps-demo-simulator
+    restart: unless-stopped
+    command: ["sh", "-c", "npx prisma migrate deploy && node dist/src/modules/simulation/index.js"]
+
+    env_file:
+      - .env
+
+    environment:
+      SIMULATION_ENABLED: "true"
+      SIMULATION_RECONCILE_SECONDS: "15"
+      SIMULATION_DEBUG: "false"
+      SIMULATION_TCP_HOST: "backend"
+      SIMULATION_TCP_PORT: "5000"
+
+    depends_on:
+      backend:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    cpus: 2.0
+    mem_limit: 2g
+    mem_reservation: 256m
+
+    networks:
+      - gps-network
 
   postgres:
     image: postgis/postgis:17-master
