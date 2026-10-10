@@ -184,7 +184,6 @@ fi
 if $RUN_GPS; then
   echo "➡️ Running GPS project"
   open_port_if_needed 9100
-  open_port_if_needed 3100
   open_port_if_needed 5220
   bash ./projects/gps/run_gps.sh
 fi
