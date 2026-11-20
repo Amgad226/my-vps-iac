@@ -4,3 +4,6 @@
 .env
 projects/**/*.env
 envs/
+
+# Runtime SQLite data must never be tracked in IaC.
+projects/portfolio/database.sqlite

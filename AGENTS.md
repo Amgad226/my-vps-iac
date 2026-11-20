@@ -39,7 +39,7 @@ Internet
    │      • Portfolio          127.0.0.1:8088
    │      • GPS Dashboard      127.0.0.1:9100
    │      • GPS Backend API    127.0.0.1:3100
-   │      • GPS Backend WS     127.0.0.1:5220
+   │      • GPS Tracker TCP    0.0.0.0:5220
    │      • GPS Mobile         127.0.0.1:9200
    │      • GPS Landing Page   127.0.0.1:9300
    │      • WireGuard UI       0.0.0.0:51821 (TCP)
@@ -93,7 +93,7 @@ Internet
 | `secrets/` | **Sensitive files.** Contains `PAT_SECRET` and all `<project>.env` files. This directory is gitignored and must be placed on the VPS at `/home/admin/secrets` (and at `~/secrets` for validation). |
 | `scripts/secrets/validate-secrets.sh` | Validates that `/home/admin/secrets` contains every secret env file and registry token used by the projects. |
 | `scripts/secrets/validate-sqllite-databases.sh` | Validates `~/sqlite-databases/map-trips/file.db` and sets `chmod 777`. |
-| `projects/` | One directory per service. Each contains a `docker-compose.yml` and a `run_*.sh` wrapper that copies its env from `/home/admin/secrets`. `projects/gps` has separate `backend/` (API + Postgres + Redis), `dashboard/`, `mobile/`, and `landing-page/` directories. |
+| `projects/` | One directory per service. Each contains a `docker-compose.yml` and a `run_*.sh` wrapper that copies its env from `/home/admin/secrets`. `projects/gps` has separate `backend/` (edge + split application roles + Postgres + Redis), `dashboard/`, `mobile/`, and `landing-page/` directories. |
 | `hooks/pre-commit` | Git hook that blocks `docker-compose*.yml` port lines not bound to `127.0.0.1`. `projects/wg-easy/docker-compose.yml` is excluded because WireGuard must bind to the host interface. Pass `--fix` to auto-correct. |
 
 ### Script categories
@@ -218,14 +218,16 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 - **Internal port:** PHP-FPM `9000` inside `laravel` container; Nginx container exposes `127.0.0.1:8088:80`.
 - **Run:** `bash ./projects/portfolio/run_portfolio.sh`
 - **Stop:** `cd projects/portfolio && docker compose down`
-- **Deps:** SQLite database mounted from `./database.sqlite`; `start.sh` runs migrations/config cache inside the container.
+- **Deps:** Runtime SQLite database mounted from the gitignored `./database.sqlite`; `start.sh` runs migrations/config cache inside the container. Back up a legacy tracked copy before pulling the commit that removes it from Git.
 
 ### GPS Project (`projects/gps/`)
 - **Purpose:** GPS backend API + dashboard + mobile web app + Weenha landing page.
-- **Backend image:** `registry.gitlab.com/amgad226/gps-backend/backend:dev`
-  - Container: `gps-backend`
-  - Public ports: `127.0.0.1:3100` (API), `127.0.0.1:5220` (WS)
-  - Internal services: PostGIS on `127.0.0.1:5435`, Redis on `127.0.0.1:6381`
+- **Backend image:** `registry.gitlab.com/amgad226/gps-backend/backend:main`
+  - Host edge: `gps-edge` on `127.0.0.1:3100`, routing REST, Socket.IO, and messaging webhooks internally.
+  - Split roles: `gps-api`, `gps-realtime`, `gps-device-gateway`, telemetry/command/notification/history/scheduler workers, `gps-messaging-gateway`, one-shot `gps-bootstrap`, and `gps-demo-simulator`.
+  - Tracker TCP: `gps-device-gateway` on public `0.0.0.0:5220` → container `5000`.
+  - Internal services: PostGIS on `127.0.0.1:5435`, Redis with AOF on `127.0.0.1:6381`.
+  - MQTT/EMQX is retired and must not be recreated. Remove its old container during cutover and its volumes with the explicit cleanup command after validation.
 - **Dashboard image:** `registry.gitlab.com/amgad226/manage-fleet-pro/dashboard:dev`
   - Container: `gps-dashboard`
   - Public port: `127.0.0.1:9100`
@@ -236,7 +238,8 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
   - Container: `gps-landing-page`
   - Static file: `projects/gps/landing-page/index.html`
   - Private host port: `127.0.0.1:9300` (container port `80`)
-- **Run:** `bash ./projects/gps/run_gps.sh`
+- **Run/deploy:** `bash ./projects/gps/run_gps.sh deploy` (plain invocation defaults to `deploy`).
+- **Operations:** `status`, `logs [service...]`, `rollback`, and destructive `cleanup-mqtt` subcommands are documented in `projects/gps/README.md`.
 - **Routes:**
   - Dashboard: `https://amjad.cloud/gps` and `https://gps-dashboard.amjad.cloud`
   - Backend: `https://amjad.cloud/gps-backend` and `https://gps-backend.amjad.cloud`
@@ -296,8 +299,7 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 | 5000 | TCP | Image Compressor | If image selected |
 | 5001 | TCP | Source Safe | If source-safe selected |
 | 3001 | TCP | Map Trips | If map-trips selected |
-| 3100 | TCP | GPS Backend API | If GPS selected |
-| 5220 | TCP | GPS Backend WS | If GPS selected |
+| 5220 | TCP | GPS tracker gateway | If GPS selected; intentionally public |
 | 9100 | TCP | GPS Dashboard | If GPS selected |
 | 51820 | UDP | WireGuard tunnel | If wg selected |
 | 51821 | TCP | WireGuard web UI | If wg selected |
@@ -309,7 +311,7 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 
 Internal admin/DB ports (`5432`, `5433`, `5434`, `3307`, `6379`, `6380`, `8081`, `8888`, `8090`) are bound to `127.0.0.1` and **not** opened in UFW.
 
-GPS Mobile port `9200` and GPS Landing Page port `9300` are bound to `127.0.0.1`. They are available publicly only through Nginx: the mobile app at `app-gps.amjad.cloud`, `/gps-mobile`, and `app.weenha.com`; the landing page at `weenha.com`.
+GPS backend edge port `3100`, Mobile port `9200`, and Landing Page port `9300` are bound to `127.0.0.1`. They are available publicly only through host Nginx. The mobile app is served at `app-gps.amjad.cloud`, `/gps-mobile`, and `app.weenha.com`; the landing page is served at `weenha.com`.
 
 ### Firewall
 
@@ -353,7 +355,7 @@ GPS Mobile port `9200` and GPS Landing Page port `9300` are bound to `127.0.0.1`
    ```bash
    bash ./projects/<project>/run_<project>.sh
    ```
-3. The script copies the env file from `/home/admin/secrets`, runs `docker compose pull`, then `docker compose up -d`.
+3. Most scripts copy the env file from `/home/admin/secrets`, run `docker compose pull`, then `docker compose up -d`. GPS is the exception: its runner creates PostgreSQL/Redis backups, saves the currently running backend image locally, pulls `backend:main`, runs the bootstrap migration, waits for every role healthcheck, and automatically rolls back on failure.
 4. All `run_*.sh` scripts honor the `SKIP_PULL=true` environment variable. When set, they skip `docker compose pull` and only run `docker compose up -d`. `init.sh` option 3 sets this automatically; you can also use it manually:
    ```bash
    SKIP_PULL=true bash ./projects/<project>/run_<project>.sh
@@ -419,7 +421,9 @@ bash ./nginx/setup_nginx.sh
 
 # Start a single project
 bash ./projects/portfolio/run_portfolio.sh
-bash ./projects/gps/run_gps.sh
+bash ./projects/gps/run_gps.sh deploy
+bash ./projects/gps/run_gps.sh status
+bash ./projects/gps/run_gps.sh rollback
 bash ./projects/wg-easy/run_wg.sh
 bash ./projects/image-compressor/run_image_compressor.sh
 bash ./projects/source-safe/run_source_safe.sh
