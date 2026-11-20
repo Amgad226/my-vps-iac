@@ -1,85 +1,215 @@
-version: "3.9"
+x-backend-common: &backend-common
+  image: registry.gitlab.com/amgad226/gps-backend/backend:main
+  env_file:
+    - .env
+  restart: always
+  networks:
+    - gps-network
+  depends_on:
+    bootstrap:
+      condition: service_completed_successfully
+    redis:
+      condition: service_healthy
+
+x-worker-healthcheck: &worker-healthcheck
+  test: ["CMD", "node", "dist/src/entrypoints/healthcheck.js"]
+  interval: 15s
+  timeout: 5s
+  retries: 5
+  start_period: 30s
 
 services:
-  backend:
-    image: registry.gitlab.com/amgad226/gps-backend/backend:main
-    container_name: gps-backend
+  edge:
+    image: nginx:1.27-alpine
+    container_name: gps-edge
     restart: always
-
     ports:
       - "127.0.0.1:3100:3000"
-      - "0.0.0.0:5220:5000"
+    volumes:
+      - ./nginx.backend.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      realtime:
+        condition: service_healthy
+      messaging-gateway:
+        condition: service_healthy
+    cpus: 0.25
+    mem_limit: 128m
+    networks:
+      - gps-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
+  bootstrap:
+    image: registry.gitlab.com/amgad226/gps-backend/backend:main
+    container_name: gps-bootstrap
+    command: ["npm", "run", "start:bootstrap"]
     env_file:
       - .env
-
+    restart: "no"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-
-    cpus: 2.0
-    mem_limit: 2g
-    mem_reservation: 1g
-
+    cpus: 1.0
+    mem_limit: 1g
     networks:
       - gps-network
 
+  api:
+    <<: *backend-common
+    container_name: gps-api
+    command: ["npm", "run", "start:api"]
+    expose:
+      - "3000"
+    cpus: 0.75
+    mem_limit: 768m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  realtime:
+    <<: *backend-common
+    container_name: gps-realtime
+    command: ["npm", "run", "start:realtime"]
+    expose:
+      - "3001"
+    environment:
+      SERVICE_ROLE: realtime
+      REALTIME_PORT: "3001"
+    cpus: 0.5
+    mem_limit: 512m
+    healthcheck: *worker-healthcheck
+
+  device-gateway:
+    <<: *backend-common
+    container_name: gps-device-gateway
+    command: ["npm", "run", "start:device-gateway"]
+    ports:
+      - "0.0.0.0:5220:5000"
+    environment:
+      SERVICE_ROLE: device-gateway
+      TCP_PORT: "5000"
+    cpus: 0.75
+    mem_limit: 512m
+    healthcheck: *worker-healthcheck
+
+  telemetry-worker:
+    <<: *backend-common
+    container_name: gps-telemetry-worker
+    command: ["npm", "run", "start:telemetry-worker"]
+    environment:
+      SERVICE_ROLE: telemetry-worker
+    cpus: 1.5
+    mem_limit: 1g
+    healthcheck: *worker-healthcheck
+
+  command-worker:
+    <<: *backend-common
+    container_name: gps-command-worker
+    command: ["npm", "run", "start:command-worker"]
+    environment:
+      SERVICE_ROLE: command-worker
+    cpus: 0.5
+    mem_limit: 512m
+    healthcheck: *worker-healthcheck
+
+  notification-worker:
+    <<: *backend-common
+    container_name: gps-notification-worker
+    command: ["npm", "run", "start:notification-worker"]
+    environment:
+      SERVICE_ROLE: notification-worker
+    cpus: 0.75
+    mem_limit: 768m
+    healthcheck: *worker-healthcheck
+
+  history-worker:
+    <<: *backend-common
+    container_name: gps-history-worker
+    command: ["npm", "run", "start:history-worker"]
+    environment:
+      SERVICE_ROLE: history-worker
+    cpus: 1.0
+    mem_limit: 1g
+    healthcheck: *worker-healthcheck
+
+  scheduler-worker:
+    <<: *backend-common
+    container_name: gps-scheduler-worker
+    command: ["npm", "run", "start:scheduler-worker"]
+    environment:
+      SERVICE_ROLE: scheduler-worker
+    cpus: 0.5
+    mem_limit: 512m
+    healthcheck: *worker-healthcheck
+
+  messaging-gateway:
+    <<: *backend-common
+    container_name: gps-messaging-gateway
+    command: ["npm", "run", "start:messaging-gateway"]
+    expose:
+      - "3002"
+    environment:
+      SERVICE_ROLE: messaging-gateway
+      MESSAGING_PORT: "3002"
+    cpus: 0.5
+    mem_limit: 512m
+    healthcheck: *worker-healthcheck
+
   demo-simulator:
-    image: registry.gitlab.com/amgad226/gps-backend/backend:main
+    <<: *backend-common
     container_name: gps-demo-simulator
     restart: unless-stopped
-    command: ["sh", "-c", "npx prisma migrate deploy && node dist/src/modules/simulation/index.js"]
-
-    env_file:
-      - .env
-
+    command: ["node", "dist/src/modules/simulation/index.js"]
     environment:
       SIMULATION_ENABLED: "true"
       SIMULATION_RECONCILE_SECONDS: "15"
       SIMULATION_DEBUG: "false"
-      SIMULATION_TCP_HOST: "backend"
+      SIMULATION_TCP_HOST: device-gateway
       SIMULATION_TCP_PORT: "5000"
-
     depends_on:
-      backend:
-        condition: service_started
-      postgres:
-        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
-
-    cpus: 2.0
-    mem_limit: 2g
-    mem_reservation: 256m
-
-    networks:
-      - gps-network
+      device-gateway:
+        condition: service_healthy
+    cpus: 0.5
+    mem_limit: 512m
 
   postgres:
     image: postgis/postgis:17-master
     container_name: gps-postgres
     restart: always
-
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5435}:5432"
-
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-gps_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gps_password}
       POSTGRES_DB: ${POSTGRES_DB:-gps_db}
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     cpus: 2.0
     mem_limit: 2g
-    mem_reservation: 1500m
-
+    mem_reservation: 1g
     networks:
       - gps-network
-
     healthcheck:
       test:
         [
@@ -90,36 +220,29 @@ services:
       timeout: 5s
       retries: 5
 
-
   redis:
     image: redis:7-alpine
     container_name: gps-redis
     restart: always
-
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
     ports:
       - "127.0.0.1:${REDIS_PORT:-6381}:6379"
-
     volumes:
       - redis_data:/data
-
-    cpus: 1.0
+    cpus: 0.5
     mem_limit: 512m
     mem_reservation: 128m
-
     networks:
       - gps-network
-
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-
 volumes:
   postgres_data:
   redis_data:
-
 
 networks:
   gps-network:

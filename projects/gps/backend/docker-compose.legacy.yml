@@ -1,0 +1,106 @@
+services:
+  backend:
+    image: registry.gitlab.com/amgad226/gps-backend/backend:main
+    container_name: gps-backend
+    restart: always
+    ports:
+      - "127.0.0.1:3100:3000"
+      - "0.0.0.0:5220:5000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    cpus: 2.0
+    mem_limit: 2g
+    mem_reservation: 1g
+    networks:
+      - gps-network
+
+  demo-simulator:
+    image: registry.gitlab.com/amgad226/gps-backend/backend:main
+    container_name: gps-demo-simulator
+    restart: unless-stopped
+    command:
+      [
+        "sh",
+        "-c",
+        "npx prisma migrate deploy && node dist/src/modules/simulation/index.js"
+      ]
+    env_file:
+      - .env
+    environment:
+      SIMULATION_ENABLED: "true"
+      SIMULATION_RECONCILE_SECONDS: "15"
+      SIMULATION_DEBUG: "false"
+      SIMULATION_TCP_HOST: backend
+      SIMULATION_TCP_PORT: "5000"
+    depends_on:
+      backend:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    cpus: 2.0
+    mem_limit: 2g
+    mem_reservation: 256m
+    networks:
+      - gps-network
+
+  postgres:
+    image: postgis/postgis:17-master
+    container_name: gps-postgres
+    restart: always
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5435}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-gps_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gps_password}
+      POSTGRES_DB: ${POSTGRES_DB:-gps_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    cpus: 2.0
+    mem_limit: 2g
+    mem_reservation: 1g
+    networks:
+      - gps-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-gps_user} -d ${POSTGRES_DB:-gps_db}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: gps-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6381}:6379"
+    volumes:
+      - redis_data:/data
+    cpus: 0.5
+    mem_limit: 512m
+    mem_reservation: 128m
+    networks:
+      - gps-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  gps-network:
+    driver: bridge
