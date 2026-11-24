@@ -125,6 +125,7 @@ Internet
    - York envs: `york-certificate.env`, `york-nest.env`, `york-next.env`, `york-staging-nest.env`, `york-v1.env`
 2. Create `/home/admin/sqlite-databases/` and provide:
    - `map-trips/file.db`
+   - The portfolio SQLite database, then symlink it to `projects/portfolio/database.sqlite`. The database file must remain outside the IaC repository.
 3. Ensure DNS A records exist for `amjad.cloud`, its project subdomains, `weenha.com`, and `app.weenha.com`.
 
 ### Run provisioning
@@ -218,7 +219,7 @@ The old `envs/` folder has been removed. `.env` files are gitignored so they are
 - **Internal port:** PHP-FPM `9000` inside `laravel` container; Nginx container exposes `127.0.0.1:8088:80`.
 - **Run:** `bash ./projects/portfolio/run_portfolio.sh`
 - **Stop:** `cd projects/portfolio && docker compose down`
-- **Deps:** Runtime SQLite database mounted from the gitignored `./database.sqlite`; `start.sh` runs migrations/config cache inside the container. Back up a legacy tracked copy before pulling the commit that removes it from Git.
+- **Deps:** `./database.sqlite` must be a symlink to the runtime SQLite file stored outside this repository (under the VPS SQLite data directory); Compose follows that symlink and bind-mounts the external file. The image entrypoint creates required directories, runs migrations/config caching, refreshes the shared `laravel_public` volume from the image, and sends Laravel/PHP-FPM logs to stderr. The container Nginx passes the host Nginx `X-Forwarded-*` headers unchanged to PHP-FPM so Laravel records the real client IP instead of the Docker bridge IP; the deployment script validates and reloads this bind-mounted Nginx configuration on every run. Do not override the image command or mount a host `public/build` directory.
 
 ### GPS Project (`projects/gps/`)
 - **Purpose:** GPS backend API + dashboard + mobile web app + Weenha landing page.
